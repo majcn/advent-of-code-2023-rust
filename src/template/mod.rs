@@ -16,7 +16,7 @@ pub fn read_file(folder: &str, day: Day) -> String {
     let cwd = env::current_dir().unwrap();
     let filepath = cwd.join("data").join(folder).join(format!("{day}.txt"));
     let f = fs::read_to_string(filepath);
-    f.expect("could not open input file")
+    String::from(f.expect("could not open input file").trim_end())
 }
 
 /// Helper function that reads a text file to string, appending a part suffix. E.g. like `01-2.txt`.
@@ -28,7 +28,7 @@ pub fn read_file_part(folder: &str, day: Day, part: u8) -> String {
         .join(folder)
         .join(format!("{day}-{part}.txt"));
     let f = fs::read_to_string(filepath);
-    f.expect("could not open input file")
+    String::from(f.expect("could not open input file").trim_end())
 }
 
 /// Creates the constant `DAY` and sets up the input and runner for each part.
