@@ -14,12 +14,10 @@ fn part_x(data: Vec<&str>, digit_map: HashMap<&str, u8>) -> u32 {
         for i in 0..line.len() {
             let digit = digit_map
                 .iter()
-                .filter(|(key, _)| line[i..].starts_with(*key))
-                .next();
+                .find(|(key, _)| line[i..].starts_with(*key));
 
-            match digit {
-                Some((_, value)) => tmp_result.push(value),
-                None => {}
+            if let Some((_, value)) = digit {
+                tmp_result.push(value)
             }
         }
 
