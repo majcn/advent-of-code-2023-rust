@@ -1,12 +1,11 @@
 advent_of_code::solution!(2);
 
-#[derive(Debug)]
 struct Game {
     id: u32,
     sets: Vec<Set>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct Set {
     red: u32,
     green: u32,

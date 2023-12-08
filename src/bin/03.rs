@@ -7,14 +7,13 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::ops::Add;
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct Number {
     value: u32,
     locations: Vec<Point>,
 }
 
-type Symbol = char;
-type Symbols = HashMap<Point, Symbol>;
+type Symbols = HashMap<Point, char>;
 
 fn parse_data(input: &str) -> (Vec<Number>, Symbols) {
     let mut numbers = vec![];

@@ -1,6 +1,5 @@
 advent_of_code::solution!(4);
 
-#[derive(Debug)]
 struct Card {
     my_numbers: Vec<u32>,
     winning_numbers: Vec<u32>,
