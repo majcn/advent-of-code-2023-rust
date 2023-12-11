@@ -34,19 +34,21 @@ where
 {
     let mut steps = 0;
     let mut location = *current_location;
-    loop {
-        for instruction in state.instructions.iter() {
-            location = match instruction {
-                'L' => state.graph[&location].0,
-                _ => state.graph[&location].1,
-            };
-            steps += 1;
 
-            if end_predicate(&location) {
-                return steps;
-            }
+    for instruction in state.instructions.iter().cycle() {
+        location = match instruction {
+            'L' => state.graph[&location].0,
+            'R' => state.graph[&location].1,
+            _ => unreachable!(),
+        };
+        steps += 1;
+
+        if end_predicate(&location) {
+            return steps;
         }
     }
+
+    unreachable!()
 }
 
 pub fn part_one(input: &str) -> Option<u64> {
