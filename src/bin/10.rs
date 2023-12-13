@@ -3,7 +3,6 @@ advent_of_code::solution!(10);
 use advent_of_code::util::point::Point;
 
 use std::collections::HashMap;
-use std::collections::HashSet;
 
 type Grid = HashMap<Point, (Point, Point)>;
 
@@ -107,29 +106,18 @@ pub fn part_two(input: &str) -> Option<u32> {
         .max_by(|a, b| a.len().cmp(&b.len()))
         .unwrap();
 
-    let max_x = best_path.iter().map(|x| x.x).max().unwrap();
-    let max_y = best_path.iter().map(|x| x.y).max().unwrap();
+    // Shoelace formula
+    let area_twice = best_path
+        .windows(2)
+        .map(|w| (w[0].y + w[1].y) * (w[0].x - w[1].x))
+        .sum::<i32>()
+        .unsigned_abs();
 
-    let all_points_iter = (0..=max_x).flat_map(|x| (0..=max_y).map(move |y| Point { x, y }));
+    // Pick's theorem
+    let boundaries = best_path.len() as u32 - 1;
+    let interior_points = (area_twice / 2) - boundaries / 2 + 1;
 
-    let best_path_as_set = best_path.iter().collect::<HashSet<_>>();
-    let result = all_points_iter
-        .filter(|p| !best_path_as_set.contains(p))
-        .filter(|p| {
-            let counter = best_path
-                .windows(2)
-                .filter(|w| {
-                    if (p.y < w[0].y) == (p.y < w[1].y) {
-                        return false;
-                    }
-
-                    p.x < w[0].x + ((p.y - w[0].y) / (w[1].y - w[0].y)) * (w[1].x - w[0].x)
-                })
-                .count();
-
-            counter % 2 == 1
-        })
-        .count() as u32;
+    let result = interior_points;
 
     Some(result)
 }
