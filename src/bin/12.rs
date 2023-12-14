@@ -1,6 +1,8 @@
 advent_of_code::solution!(12);
 
-#[derive(Hash, Clone, Copy)]
+use std::collections::HashMap;
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
 enum Spring {
     Operational,
     Damaged,
@@ -36,24 +38,22 @@ fn parse_data(input: &str) -> Vec<State> {
         .collect()
 }
 
-fn part_x(data: &[Spring], instructions: &[u32]) -> u64 {
-    if instructions.is_empty() {
-        return if data.iter().any(|x| matches!(x, Spring::Damaged)) {
-            0
-        } else {
-            1
-        };
+#[derive(Default)]
+struct MemoPartX<'a> {
+    cache: HashMap<(&'a [Spring], &'a [u32]), u64>,
+}
+
+impl<'a> MemoPartX<'a> {
+    fn handle_next_operational(&mut self, data: &'a [Spring], instructions: &'a [u32]) -> u64 {
+        self.part_x(&data[1..], instructions)
     }
 
-    if data.is_empty() {
-        return 0;
-    }
-
-    let spring = &data[0];
-    let group_size = instructions[0] as usize;
-
-    let handle_next_operational = || part_x(&data[1..], instructions);
-    let handle_next_damaged = || {
+    fn handle_next_damaged(
+        &mut self,
+        data: &'a [Spring],
+        instructions: &'a [u32],
+        group_size: usize,
+    ) -> u64 {
         if data.len() < group_size {
             return 0;
         }
@@ -69,17 +69,46 @@ fn part_x(data: &[Spring], instructions: &[u32]) -> u64 {
 
         match data[group_size] {
             Spring::Operational | Spring::Unknown => {
-                let result = part_x(&data[(group_size + 1)..], &instructions[1..]);
+                let result = self.part_x(&data[(group_size + 1)..], &instructions[1..]);
                 result
             }
             Spring::Damaged => 0,
         }
-    };
+    }
 
-    match spring {
-        Spring::Damaged => handle_next_damaged(),
-        Spring::Operational => handle_next_operational(),
-        Spring::Unknown => handle_next_damaged() + handle_next_operational(),
+    pub fn part_x(&mut self, data: &'a [Spring], instructions: &'a [u32]) -> u64 {
+        let cache_key = (data, instructions);
+        if let Some(cached_value) = self.cache.get(&cache_key) {
+            return *cached_value;
+        }
+
+        if instructions.is_empty() {
+            return if data.iter().any(|x| matches!(x, Spring::Damaged)) {
+                0
+            } else {
+                1
+            };
+        }
+
+        if data.is_empty() {
+            return 0;
+        }
+
+        let group_size = instructions[0] as usize;
+
+        let result = match &data[0] {
+            Spring::Damaged => self.handle_next_damaged(data, instructions, group_size),
+            Spring::Operational => self.handle_next_operational(data, instructions),
+            Spring::Unknown => {
+                let damaged = self.handle_next_damaged(data, instructions, group_size);
+                let operational = self.handle_next_operational(data, instructions);
+                damaged + operational
+            }
+        };
+
+        self.cache.insert(cache_key, result);
+
+        result
     }
 }
 
@@ -88,7 +117,7 @@ pub fn part_one(input: &str) -> Option<u64> {
 
     let result = states
         .into_iter()
-        .map(|s| part_x(&s.data, &s.instructions))
+        .map(|s| MemoPartX::default().part_x(&s.data, &s.instructions))
         .sum();
 
     Some(result)
@@ -128,7 +157,7 @@ pub fn part_two(input: &str) -> Option<u64> {
 
     let result = new_states
         .into_iter()
-        .map(|s| part_x(&s.data, &s.instructions))
+        .map(|s| MemoPartX::default().part_x(&s.data, &s.instructions))
         .sum();
 
     Some(result)
