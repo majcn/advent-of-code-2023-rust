@@ -1,11 +1,14 @@
 advent_of_code::solution!(12);
 
-use regex::Regex;
+#[derive(Hash, Clone, Copy)]
+enum Spring {
+    Operational,
+    Damaged,
+    Unknown,
+}
 
-#[derive(Debug)]
 struct State {
-    data: Vec<u8>,
-    unknown_data: Vec<usize>,
+    data: Vec<Spring>,
     instructions: Vec<u32>,
 }
 
@@ -15,77 +18,78 @@ fn parse_data(input: &str) -> Vec<State> {
         .map(|line| {
             let (left, right) = line.split_once(' ').unwrap();
 
-            let data = left.bytes().collect();
-            let unknown_data = left
+            let data = left
                 .as_bytes()
                 .iter()
-                .enumerate()
-                .filter(|(_, v)| v == &&b'?')
-                .map(|(i, _)| i)
+                .map(|c| match c {
+                    b'.' => Spring::Operational,
+                    b'#' => Spring::Damaged,
+                    b'?' => Spring::Unknown,
+                    _ => unreachable!(),
+                })
                 .collect();
+
             let instructions = right.split(',').map(|x| x.parse().unwrap()).collect();
 
-            State {
-                data,
-                unknown_data,
-                instructions,
-            }
+            State { data, instructions }
         })
         .collect()
 }
 
-fn recursion(
-    data: &mut Vec<u8>,
-    regex: &Regex,
-    unknown_data: &[usize],
-    unknown_data_i: usize,
-) -> u64 {
-    let mut result = 0;
-
-    if unknown_data_i == unknown_data.len() {
-        return 1;
+fn part_x(data: &[Spring], instructions: &[u32]) -> u64 {
+    if instructions.is_empty() {
+        return if data.iter().any(|x| matches!(x, Spring::Damaged)) {
+            0
+        } else {
+            1
+        };
     }
 
-    let i = unknown_data[unknown_data_i];
-
-    if data[i] == b'?' {
-        data[i] = b'.';
-        if regex.is_match(std::str::from_utf8(data).unwrap()) {
-            result += recursion(data, regex, unknown_data, unknown_data_i + 1)
-        }
-
-        data[i] = b'#';
-        if regex.is_match(std::str::from_utf8(data).unwrap()) {
-            result += recursion(data, regex, unknown_data, unknown_data_i + 1)
-        }
-
-        data[i] = b'?';
+    if data.is_empty() {
+        return 0;
     }
 
-    result
+    let spring = &data[0];
+    let group_size = instructions[0] as usize;
+
+    let handle_next_operational = || part_x(&data[1..], instructions);
+    let handle_next_damaged = || {
+        if data.len() < group_size {
+            return 0;
+        }
+
+        let group_data = &data[..group_size];
+        if group_data.iter().any(|x| matches!(x, Spring::Operational)) {
+            return 0;
+        }
+
+        if data.len() == group_size {
+            return if instructions.len() == 1 { 1 } else { 0 };
+        }
+
+        match data[group_size] {
+            Spring::Operational | Spring::Unknown => {
+                let result = part_x(&data[(group_size + 1)..], &instructions[1..]);
+                result
+            }
+            Spring::Damaged => 0,
+        }
+    };
+
+    match spring {
+        Spring::Damaged => handle_next_damaged(),
+        Spring::Operational => handle_next_operational(),
+        Spring::Unknown => handle_next_damaged() + handle_next_operational(),
+    }
 }
 
 pub fn part_one(input: &str) -> Option<u64> {
     let states = parse_data(input);
 
-    let mut result = 0;
-    for state in states {
-        let mut data = state.data;
-        let unknown_data = state.unknown_data;
-        let instructions = state.instructions;
-
-        let inner_regex = instructions
-            .into_iter()
-            .map(|i| (0..i).map(|_| "[#|\\?]").collect::<Vec<_>>().join(""))
-            .collect::<Vec<_>>()
-            .join(r"[\.|\?]+");
-        let regex = format!(r"^[\.|\?]*{inner_regex}[\.|\?]*$");
-        let regex = Regex::new(&regex).unwrap();
-
-        let options = recursion(&mut data, &regex, &unknown_data, 0);
-
-        result += options;
-    }
+    let result = states
+        .into_iter()
+        .map(|s| part_x(&s.data, &s.instructions))
+        .sum();
 
     Some(result)
 }
@@ -99,18 +103,11 @@ pub fn part_two(input: &str) -> Option<u64> {
             state
                 .data
                 .iter()
-                .chain(std::iter::once(&b'?'))
+                .chain(std::iter::once(&Spring::Unknown))
                 .copied()
                 .cycle()
                 .take(state.data.len() * 5 + 4),
         );
-
-        let new_state_unknown_data = new_state_data
-            .iter()
-            .enumerate()
-            .filter(|(_, v)| v == &&b'?')
-            .map(|(i, _)| i)
-            .collect();
 
         let new_state_instructions = Vec::from_iter(
             state
@@ -123,33 +120,16 @@ pub fn part_two(input: &str) -> Option<u64> {
 
         let new_state = State {
             data: new_state_data,
-            unknown_data: new_state_unknown_data,
             instructions: new_state_instructions,
         };
 
         new_states.push(new_state);
     }
 
-    let states = new_states;
-
-    let mut result = 0;
-    for state in states {
-        let mut data = state.data;
-        let unknown_data = state.unknown_data;
-        let instructions = state.instructions;
-
-        let inner_regex = instructions
-            .into_iter()
-            .map(|i| (0..i).map(|_| "[#|\\?]").collect::<Vec<_>>().join(""))
-            .collect::<Vec<_>>()
-            .join(r"[\.|\?]+");
-        let regex = format!(r"^[\.|\?]*{inner_regex}[\.|\?]*$");
-        let regex = Regex::new(&regex).unwrap();
-
-        let options = recursion(&mut data, &regex, &unknown_data, 0);
-
-        result += options;
-    }
+    let result = new_states
+        .into_iter()
+        .map(|s| part_x(&s.data, &s.instructions))
+        .sum();
 
     Some(result)
 }
