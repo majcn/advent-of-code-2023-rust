@@ -5,11 +5,7 @@ fn parse_data(input: &str) -> Vec<&str> {
 }
 
 fn calc_hash(data: &str) -> u32 {
-    let mut result = 0;
-    for ascii in data.bytes() {
-        result = (result + ascii as u32) * 17 % 256;
-    }
-    result
+    data.bytes().fold(0, |acc, x| (acc + x as u32) * 17 % 256)
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
