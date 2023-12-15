@@ -69,8 +69,7 @@ impl<'a> MemoPartX<'a> {
 
         match data[group_size] {
             Spring::Operational | Spring::Unknown => {
-                let result = self.part_x(&data[(group_size + 1)..], &instructions[1..]);
-                result
+                self.part_x(&data[(group_size + 1)..], &instructions[1..])
             }
             Spring::Damaged => 0,
         }
