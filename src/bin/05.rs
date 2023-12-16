@@ -96,7 +96,7 @@ fn init_big_mapper(first_map: &[MapPart]) -> Vec<MapPart> {
         big_mapper.push(**current)
     }
 
-    let last_el = first_map.iter().next_back().unwrap();
+    let last_el = first_map.last().unwrap();
     big_mapper.push(MapPart {
         min_source: last_el.max_source + 1,
         max_source: u64::MAX,
@@ -151,7 +151,7 @@ fn apply_mapper(big_mapper: &mut Vec<MapPart>, mapper: &[MapPart]) {
 pub fn part_one(input: &str) -> Option<u64> {
     let (seeds, maps) = parse_data(input);
 
-    let mut big_mapper = init_big_mapper(maps.iter().next().unwrap());
+    let mut big_mapper = init_big_mapper(maps.first().unwrap());
     maps.iter()
         .skip(1)
         .for_each(|m| apply_mapper(&mut big_mapper, m));
@@ -174,7 +174,7 @@ pub fn part_one(input: &str) -> Option<u64> {
 pub fn part_two(input: &str) -> Option<u64> {
     let (seeds, maps) = parse_data(input);
 
-    let mut big_mapper = init_big_mapper(maps.iter().next().unwrap());
+    let mut big_mapper = init_big_mapper(maps.first().unwrap());
     maps.iter()
         .skip(1)
         .for_each(|m| apply_mapper(&mut big_mapper, m));
