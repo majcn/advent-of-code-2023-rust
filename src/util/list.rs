@@ -1,3 +1,5 @@
+use super::point::Point;
+
 #[derive(Debug)]
 pub struct Array2D<T> {
     line_size: usize,
@@ -45,6 +47,33 @@ impl<T> std::ops::Index<(usize, usize)> for Array2D<T> {
     #[inline]
     fn index(&self, index: (usize, usize)) -> &Self::Output {
         &self.raw_data[index.1 * self.line_size + index.0]
+    }
+}
+
+impl<T> std::ops::Index<&(usize, usize)> for Array2D<T> {
+    type Output = T;
+
+    #[inline]
+    fn index(&self, index: &(usize, usize)) -> &Self::Output {
+        &self.raw_data[index.1 * self.line_size + index.0]
+    }
+}
+
+impl<T> std::ops::Index<Point> for Array2D<T> {
+    type Output = T;
+
+    #[inline]
+    fn index(&self, index: Point) -> &Self::Output {
+        &self.raw_data[index.y as usize * self.line_size + index.x as usize]
+    }
+}
+
+impl<T> std::ops::Index<&Point> for Array2D<T> {
+    type Output = T;
+
+    #[inline]
+    fn index(&self, index: &Point) -> &Self::Output {
+        &self.raw_data[index.y as usize * self.line_size + index.x as usize]
     }
 }
 
