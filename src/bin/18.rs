@@ -46,21 +46,22 @@ where
     D: Fn(&Dig) -> Direction,
     L: Fn(&Dig) -> u32,
 {
+    let mut trench = 0;
     let mut polygon = vec![(0, 0)];
     for dig in data {
         let x = polygon[polygon.len() - 1].0;
         let y = polygon[polygon.len() - 1].1;
 
-        for i in 1..=get_length(dig) {
-            let next_location = match get_direction(dig) {
-                Direction::Left => (x - i as i64, y),
-                Direction::Right => (x + i as i64, y),
-                Direction::Up => (x, y - i as i64),
-                Direction::Down => (x, y + i as i64),
-            };
+        let n = get_length(dig) as i64;
+        let next_location = match get_direction(dig) {
+            Direction::Left => (x - n, y),
+            Direction::Right => (x + n, y),
+            Direction::Up => (x, y - n),
+            Direction::Down => (x, y + n),
+        };
 
-            polygon.push(next_location);
-        }
+        trench += n as u64;
+        polygon.push(next_location);
     }
 
     // Shoelace formula
@@ -71,10 +72,10 @@ where
         .unsigned_abs();
 
     // Pick's theorem
-    let boundaries = polygon.len() as u64 - 1;
+    let boundaries = trench;
     let interior_points = (area_twice / 2) - boundaries / 2 + 1;
 
-    interior_points + polygon.len() as u64 - 1
+    interior_points + boundaries
 }
 
 pub fn part_one(input: &str) -> Option<u64> {
