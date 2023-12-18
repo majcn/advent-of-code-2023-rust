@@ -1,25 +1,21 @@
 advent_of_code::solution!(16);
 
-use advent_of_code::util::point::{Point, DOWN, LEFT, RIGHT, UP};
+use advent_of_code::util::list::Array2D;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 struct Grid {
-    len_x: i32,
-    len_y: i32,
-    data: HashMap<Point, char>,
+    len_x: usize,
+    len_y: usize,
+    data: Array2D<char>,
 }
 
 fn parse_data(input: &str) -> Grid {
-    let len_x = input.lines().next().unwrap().len() as i32;
-    let len_y = input.lines().count() as i32;
+    let len_x = input.lines().next().unwrap().len();
+    let len_y = input.lines().count();
 
-    let mut data = HashMap::with_capacity(input.len());
-    for (y, line) in input.lines().enumerate() {
-        for (x, v) in line.chars().enumerate() {
-            data.insert(Point::new(x as i32, y as i32), v);
-        }
-    }
+    let mut data = Array2D::new(len_x);
+    input.lines().for_each(|line| data.add_line(line.chars()));
 
     Grid { len_x, len_y, data }
 }
@@ -32,7 +28,7 @@ enum Direction {
     Down,
 }
 
-fn next_directions(grid: &Grid, location: &Point, direction: &Direction) -> Vec<Direction> {
+fn next_directions(grid: &Grid, location: &(usize, usize), direction: &Direction) -> Vec<Direction> {
     match (grid.data[location], direction) {
         ('\\', Direction::Left) => vec![Direction::Up],
         ('\\', Direction::Right) => vec![Direction::Down],
@@ -54,23 +50,30 @@ fn next_directions(grid: &Grid, location: &Point, direction: &Direction) -> Vec<
     }
 }
 
-fn next_position(grid: &Grid, location: &Point, direction: &Direction) -> Option<Point> {
-    let direction_point = match direction {
-        Direction::Left => LEFT,
-        Direction::Right => RIGHT,
-        Direction::Up => DOWN,
-        Direction::Down => UP,
+fn next_position(
+    grid: &Grid,
+    location: &(usize, usize),
+    direction: &Direction,
+) -> Option<(usize, usize)> {
+    let (next_x, next_y) = match direction {
+        Direction::Left => (location.0.wrapping_sub(1), location.1),
+        Direction::Right => (location.0 + 1, location.1),
+        Direction::Up => (location.0, location.1.wrapping_sub(1)),
+        Direction::Down => (location.0, location.1 + 1),
     };
 
-    let next_location = *location + direction_point;
-    if (0..grid.len_x).contains(&next_location.x) && (0..grid.len_y).contains(&next_location.y) {
-        Some(next_location)
+    if (0..grid.len_x).contains(&next_x) && (0..grid.len_y).contains(&next_y) {
+        Some((next_x, next_y))
     } else {
         None
     }
 }
 
-fn follow_the_light(grid: &Grid, start_location: Point, start_direction: Direction) -> u32 {
+fn follow_the_light(
+    grid: &Grid,
+    start_location: (usize, usize),
+    start_direction: Direction,
+) -> u32 {
     let mut cache = HashSet::new();
 
     let mut queue = next_directions(grid, &start_location, &start_direction)
@@ -84,10 +87,10 @@ fn follow_the_light(grid: &Grid, start_location: Point, start_direction: Directi
         }
         cache.insert(beam);
 
-        let (current_position, current_direction) = beam;
-        if let Some(next_position) = next_position(grid, &current_position, &current_direction) {
+        let (current_position, current_direction) = &beam;
+        if let Some(next_position) = next_position(grid, current_position, current_direction) {
             queue.extend(
-                next_directions(grid, &next_position, &current_direction)
+                next_directions(grid, &next_position, current_direction)
                     .into_iter()
                     .map(|d| (next_position, d)),
             )
@@ -100,7 +103,7 @@ fn follow_the_light(grid: &Grid, start_location: Point, start_direction: Directi
 pub fn part_one(input: &str) -> Option<u32> {
     let grid = parse_data(input);
 
-    let result = follow_the_light(&grid, Point::new(0, 0), Direction::Right);
+    let result = follow_the_light(&grid, (0, 0), Direction::Right);
 
     Some(result)
 }
@@ -117,7 +120,7 @@ pub fn part_two(input: &str) -> Option<u32> {
         .chain(m2)
         .chain(m3)
         .chain(m4)
-        .map(|(x, y, d)| follow_the_light(&grid, Point::new(x, y), d))
+        .map(|(x, y, d)| follow_the_light(&grid, (x, y), d))
         .max()
         .unwrap();
 
