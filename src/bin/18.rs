@@ -1,6 +1,5 @@
 advent_of_code::solution!(18);
 
-#[derive(Clone, Copy)]
 enum Direction {
     Left,
     Right,
@@ -43,8 +42,8 @@ fn parse_data(input: &str) -> Vec<Dig> {
 
 fn part_x<D, L>(data: &[Dig], get_direction: D, get_length: L) -> u64
 where
-    D: Fn(&Dig) -> Direction,
-    L: Fn(&Dig) -> u32,
+    D: Fn(&Dig) -> &Direction,
+    L: Fn(&Dig) -> i64,
 {
     let mut trench = 0;
     let mut polygon = vec![(0, 0)];
@@ -52,7 +51,7 @@ where
         let x = polygon[polygon.len() - 1].0;
         let y = polygon[polygon.len() - 1].1;
 
-        let n = get_length(dig) as i64;
+        let n = get_length(dig);
         let next_location = match get_direction(dig) {
             Direction::Left => (x - n, y),
             Direction::Right => (x + n, y),
@@ -81,7 +80,7 @@ where
 pub fn part_one(input: &str) -> Option<u64> {
     let data = parse_data(input);
 
-    let result = part_x(&data, |dig| dig.direction, |dig| dig.n);
+    let result = part_x(&data, |dig| &dig.direction, |dig| dig.n as i64);
 
     Some(result)
 }
@@ -92,13 +91,13 @@ pub fn part_two(input: &str) -> Option<u64> {
     let result = part_x(
         &data,
         |dig| match dig.color & 0xF {
-            2 => Direction::Left,
-            0 => Direction::Right,
-            3 => Direction::Up,
-            1 => Direction::Down,
+            2 => &Direction::Left,
+            0 => &Direction::Right,
+            3 => &Direction::Up,
+            1 => &Direction::Down,
             _ => unreachable!(),
         },
-        |dig| dig.color >> 4,
+        |dig| (dig.color >> 4) as i64,
     );
 
     Some(result)
