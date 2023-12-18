@@ -5,9 +5,9 @@ use advent_of_code::util::list::Array2D;
 use std::collections::HashSet;
 
 struct Grid {
+    data: Array2D<char>,
     len_x: usize,
     len_y: usize,
-    data: Array2D<char>,
 }
 
 fn parse_data(input: &str) -> Grid {
@@ -17,7 +17,7 @@ fn parse_data(input: &str) -> Grid {
     let mut data = Array2D::new(len_x);
     input.lines().for_each(|line| data.add_line(line.chars()));
 
-    Grid { len_x, len_y, data }
+    Grid { data, len_x, len_y }
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
@@ -28,7 +28,11 @@ enum Direction {
     Down,
 }
 
-fn next_directions(grid: &Grid, location: &(usize, usize), direction: &Direction) -> Vec<Direction> {
+fn next_directions(
+    grid: &Grid,
+    location: &(usize, usize),
+    direction: &Direction,
+) -> Vec<Direction> {
     match (grid.data[location], direction) {
         ('\\', Direction::Left) => vec![Direction::Up],
         ('\\', Direction::Right) => vec![Direction::Down],
