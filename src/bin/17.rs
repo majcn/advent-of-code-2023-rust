@@ -87,7 +87,7 @@ fn get_neighbors_part_1(grid: &Grid, element: &Element) -> Vec<Element> {
             x: x - 1,
             y,
             direction: Direction::Left,
-            direction_count: direction_count,
+            direction_count,
         });
     }
 
@@ -104,7 +104,7 @@ fn get_neighbors_part_1(grid: &Grid, element: &Element) -> Vec<Element> {
             x: x + 1,
             y,
             direction: Direction::Right,
-            direction_count: direction_count,
+            direction_count,
         });
     }
 
@@ -121,7 +121,7 @@ fn get_neighbors_part_1(grid: &Grid, element: &Element) -> Vec<Element> {
             x,
             y: y - 1,
             direction: Direction::Up,
-            direction_count: direction_count,
+            direction_count,
         });
     }
 
@@ -138,7 +138,7 @@ fn get_neighbors_part_1(grid: &Grid, element: &Element) -> Vec<Element> {
             x,
             y: y + 1,
             direction: Direction::Down,
-            direction_count: direction_count,
+            direction_count,
         });
     }
 

@@ -51,8 +51,8 @@ where
         let x = polygon[polygon.len() - 1].0;
         let y = polygon[polygon.len() - 1].1;
 
-        for i in 1..=get_length(&dig) {
-            let next_location = match get_direction(&dig) {
+        for i in 1..=get_length(dig) {
+            let next_location = match get_direction(dig) {
                 Direction::Left => (x - i as i64, y),
                 Direction::Right => (x + i as i64, y),
                 Direction::Up => (x, y - i as i64),
