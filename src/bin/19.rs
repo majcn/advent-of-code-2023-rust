@@ -93,7 +93,7 @@ fn parse_data(input: &str) -> (TreeNode, Vec<Vec<u32>>) {
         .lines()
         .map(|line| &line[1..line.len() - 1])
         .map(|line| {
-            line.splitn(4, ",")
+            line.splitn(4, ',')
                 .map(|x| x[2..].parse().unwrap())
                 .collect::<Vec<_>>()
         })
@@ -102,42 +102,30 @@ fn parse_data(input: &str) -> (TreeNode, Vec<Vec<u32>>) {
     (root, ratings)
 }
 
-struct TreeTraversePath {}
+fn get_final_node_value(node: &TreeNode, rating: &[u32]) -> NodeValue {
+    if let Some(v) = &node.value {
+        *v
+    } else {
+        let node_condition = node.condition.unwrap();
 
-impl TreeTraversePath {
-    pub fn new() -> Self {
-        Self {}
-    }
+        let i = match node_condition.name {
+            'x' => 0,
+            'm' => 1,
+            'a' => 2,
+            's' => 3,
+            _ => unreachable!(),
+        };
 
-    pub fn get_value(&self, node: &TreeNode, rating: &[u32]) -> NodeValue {
-        self.traverse_tree(node, rating)
-    }
+        let should_go_left = match node_condition.expression {
+            ConditionExpression::Less => rating[i] < node_condition.value,
+            ConditionExpression::Greater => rating[i] > node_condition.value,
+            _ => unreachable!(),
+        };
 
-    fn traverse_tree(&self, node: &TreeNode, rating: &[u32]) -> NodeValue {
-        if let Some(v) = &node.value {
-            return *v;
+        if should_go_left {
+            return get_final_node_value(node.left.as_ref().unwrap(), rating);
         } else {
-            let node_condition = node.condition.unwrap();
-
-            let i = match node_condition.name {
-                'x' => 0,
-                'm' => 1,
-                'a' => 2,
-                's' => 3,
-                _ => unreachable!(),
-            };
-
-            let should_go_left = match node_condition.expression {
-                ConditionExpression::Less => rating[i] < node_condition.value,
-                ConditionExpression::Greater => rating[i] > node_condition.value,
-                _ => unreachable!(),
-            };
-
-            if should_go_left {
-                return self.traverse_tree(node.left.as_ref().unwrap(), rating);
-            } else {
-                return self.traverse_tree(node.right.as_ref().unwrap(), rating);
-            }
+            return get_final_node_value(node.right.as_ref().unwrap(), rating);
         }
     }
 }
@@ -147,75 +135,68 @@ pub fn part_one(input: &str) -> Option<u32> {
 
     let result = ratings
         .into_iter()
-        .filter(|rating| {
-            matches!(
-                TreeTraversePath::new().get_value(&root_node, &rating),
-                NodeValue::Accept
-            )
-        })
+        .filter(|rating| matches!(get_final_node_value(&root_node, rating), NodeValue::Accept))
         .map(|x| x.iter().sum::<u32>())
         .sum();
 
     Some(result)
 }
 
-struct TreeTraversePaths {
-    path_conditions: Vec<Vec<Condition>>,
-    path_values: Vec<NodeValue>,
-}
+fn calculate_paths(
+    path_conditions: &mut Vec<Vec<Condition>>,
+    path_values: &mut Vec<NodeValue>,
+    node: &TreeNode,
+    values: Vec<Condition>,
+) {
+    if let Some(v) = &node.value {
+        path_values.push(*v);
+        path_conditions.push(values);
+    } else {
+        let node_condition = node.condition.unwrap();
 
-impl TreeTraversePaths {
-    pub fn new() -> Self {
-        Self {
-            path_conditions: vec![],
-            path_values: vec![],
-        }
-    }
+        let mut new_values = Vec::with_capacity(values.len() + 1);
+        new_values.extend(values.iter().copied());
+        new_values.push(node_condition);
+        calculate_paths(
+            path_conditions,
+            path_values,
+            node.left.as_ref().unwrap(),
+            new_values,
+        );
 
-    pub fn calculate_paths(&mut self, node: &TreeNode) {
-        self.traverse_tree(node, vec![])
-    }
-
-    fn traverse_tree(&mut self, node: &TreeNode, values: Vec<Condition>) {
-        if let Some(v) = &node.value {
-            self.path_values.push(*v);
-            self.path_conditions.push(values);
-        } else {
-            let node_condition = node.condition.unwrap();
-
-            let mut new_values = Vec::with_capacity(values.len() + 1);
-            new_values.extend(values.iter().copied());
-            new_values.push(node_condition);
-            self.traverse_tree(node.left.as_ref().unwrap(), new_values);
-
-            let mut new_values = Vec::with_capacity(values.len() + 1);
-            new_values.extend(values.iter().copied());
-            new_values.push(Condition {
-                name: node_condition.name,
-                expression: match node_condition.expression {
-                    ConditionExpression::Less => ConditionExpression::GreaterOrEqual,
-                    ConditionExpression::LessOrEqual => ConditionExpression::Greater,
-                    ConditionExpression::Greater => ConditionExpression::LessOrEqual,
-                    ConditionExpression::GreaterOrEqual => ConditionExpression::Less,
-                },
-                value: node_condition.value,
-            });
-            self.traverse_tree(node.right.as_ref().unwrap(), new_values);
-        }
+        let mut new_values = Vec::with_capacity(values.len() + 1);
+        new_values.extend(values);
+        new_values.push(Condition {
+            name: node_condition.name,
+            expression: match node_condition.expression {
+                ConditionExpression::Less => ConditionExpression::GreaterOrEqual,
+                ConditionExpression::LessOrEqual => ConditionExpression::Greater,
+                ConditionExpression::Greater => ConditionExpression::LessOrEqual,
+                ConditionExpression::GreaterOrEqual => ConditionExpression::Less,
+            },
+            value: node_condition.value,
+        });
+        calculate_paths(
+            path_conditions,
+            path_values,
+            node.right.as_ref().unwrap(),
+            new_values,
+        );
     }
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
     let (node, _) = parse_data(input);
 
-    let mut paths = TreeTraversePaths::new();
-    paths.calculate_paths(&node);
+    let mut path_conditions = vec![];
+    let mut path_values = vec![];
 
-    let accepted_paths = paths
-        .path_conditions
+    calculate_paths(&mut path_conditions, &mut path_values, &node, vec![]);
+
+    let accepted_paths = path_conditions
         .iter()
         .enumerate()
-        .filter(|(i, _)| matches!(paths.path_values[*i], NodeValue::Accept))
+        .filter(|(i, _)| matches!(path_values[*i], NodeValue::Accept))
         .map(|(_, v)| v)
         .collect::<Vec<_>>();
 
