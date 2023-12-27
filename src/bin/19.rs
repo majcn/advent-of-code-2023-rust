@@ -1,8 +1,6 @@
 advent_of_code::solution!(19);
 
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 
 #[derive(Clone, Copy)]
 enum ConditionExpression {
@@ -26,8 +24,8 @@ enum NodeValue {
 }
 
 struct TreeNode {
-    left: Option<Rc<RefCell<TreeNode>>>,
-    right: Option<Rc<RefCell<TreeNode>>>,
+    left: Option<Box<TreeNode>>,
+    right: Option<Box<TreeNode>>,
     condition: Option<Condition>,
     value: Option<NodeValue>,
 }
@@ -74,8 +72,8 @@ fn create_node(data: &HashMap<&str, &str>, name: &str) -> TreeNode {
     let right_node = create_node(data, other);
 
     TreeNode {
-        left: Some(Rc::new(RefCell::new(left_node))),
-        right: Some(Rc::new(RefCell::new(right_node))),
+        left: Some(Box::new(left_node)),
+        right: Some(Box::new(right_node)),
         condition: Some(condition),
         value: None,
     }
@@ -111,13 +109,11 @@ impl TreeTraversePath {
         Self {}
     }
 
-    pub fn get_value(&self, node_ref: &Rc<RefCell<TreeNode>>, rating: &[u32]) -> NodeValue {
-        self.traverse_tree(node_ref, rating)
+    pub fn get_value(&self, node: &TreeNode, rating: &[u32]) -> NodeValue {
+        self.traverse_tree(node, rating)
     }
 
-    fn traverse_tree(&self, node_ref: &Rc<RefCell<TreeNode>>, rating: &[u32]) -> NodeValue {
-        let node = node_ref.borrow();
-
+    fn traverse_tree(&self, node: &TreeNode, rating: &[u32]) -> NodeValue {
         if let Some(v) = &node.value {
             return *v;
         } else {
@@ -149,13 +145,11 @@ impl TreeTraversePath {
 pub fn part_one(input: &str) -> Option<u32> {
     let (root_node, ratings) = parse_data(input);
 
-    let root_node_ref = Rc::new(RefCell::new(root_node));
-
     let result = ratings
         .into_iter()
         .filter(|rating| {
             matches!(
-                TreeTraversePath::new().get_value(&root_node_ref, &rating),
+                TreeTraversePath::new().get_value(&root_node, &rating),
                 NodeValue::Accept
             )
         })
@@ -178,13 +172,11 @@ impl TreeTraversePaths {
         }
     }
 
-    pub fn calculate_paths(&mut self, node_ref: &Rc<RefCell<TreeNode>>) {
-        self.traverse_tree(node_ref, vec![])
+    pub fn calculate_paths(&mut self, node: &TreeNode) {
+        self.traverse_tree(node, vec![])
     }
 
-    fn traverse_tree(&mut self, node_ref: &Rc<RefCell<TreeNode>>, values: Vec<Condition>) {
-        let node = node_ref.borrow();
-
+    fn traverse_tree(&mut self, node: &TreeNode, values: Vec<Condition>) {
         if let Some(v) = &node.value {
             self.path_values.push(*v);
             self.path_conditions.push(values);
@@ -217,7 +209,7 @@ pub fn part_two(input: &str) -> Option<u64> {
     let (node, _) = parse_data(input);
 
     let mut paths = TreeTraversePaths::new();
-    paths.calculate_paths(&Rc::new(RefCell::new(node)));
+    paths.calculate_paths(&node);
 
     let accepted_paths = paths
         .path_conditions
