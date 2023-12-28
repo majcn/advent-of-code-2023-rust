@@ -32,7 +32,7 @@ fn parse_data(input: &str) -> Data {
 }
 
 fn run_step(my_positions_bits: &[U1024], rocks_bits: &[U1024]) -> Vec<U1024> {
-    let mut new_positions_bits = my_positions_bits.iter().copied().collect::<Vec<_>>();
+    let mut new_positions_bits = my_positions_bits.to_vec();
 
     for y in 1..my_positions_bits.len() - 1 {
         let left = my_positions_bits[y] << 1;
@@ -48,6 +48,34 @@ fn run_step(my_positions_bits: &[U1024], rocks_bits: &[U1024]) -> Vec<U1024> {
     new_positions_bits
 }
 
+fn part_x<const N: usize>(
+    snapshots: [usize; N],
+    my_positions_bits: Vec<U1024>,
+    rocks_bits: Vec<U1024>,
+) -> [(i64, i64); N] {
+    let mut result = [(0, 0); N];
+
+    let mut my_positions_bits = my_positions_bits;
+
+    let mut i = 0;
+    for (snapshot_index, snapshot) in snapshots.into_iter().enumerate() {
+        for _ in i..snapshot {
+            my_positions_bits = run_step(&my_positions_bits, &rocks_bits);
+        }
+        i = snapshot;
+
+        result[snapshot_index] = (
+            snapshot as i64,
+            my_positions_bits
+                .iter()
+                .map(|v| v.count_ones() as i64)
+                .sum(),
+        );
+    }
+
+    result
+}
+
 pub fn part_one(input: &str) -> Option<u64> {
     let Data {
         rock_locations,
@@ -55,6 +83,7 @@ pub fn part_one(input: &str) -> Option<u64> {
         len_y,
     } = parse_data(input);
 
+    // convert to bits and add borders
     let mut rocks_bits = vec![!U1024::ZERO];
     for y in 0..len_y {
         let mut rocks_bits_line = U1024::ZERO;
@@ -74,12 +103,11 @@ pub fn part_one(input: &str) -> Option<u64> {
         .collect::<Vec<_>>();
     my_positions_bits[(len_y + 2) / 2] |= U1024::ONE << ((len_x + 2) / 2);
 
-    let my_positions_bits = (0..64).fold(my_positions_bits, |acc, _| run_step(&acc, &rocks_bits));
-
-    let result = my_positions_bits
-        .iter()
-        .map(|x| x.count_ones() as u64)
-        .sum();
+    let result = part_x([64], my_positions_bits, rocks_bits)
+        .into_iter()
+        .next()
+        .map(|x| x.1 as u64)
+        .unwrap();
 
     Some(result)
 }
@@ -91,6 +119,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         len_y,
     } = parse_data(input);
 
+    // convert to bits and expand GRID_MULTIPLIER times
     let mut rocks_bits = vec![];
     for y in 0..len_y {
         let mut rocks_bits_line = U1024::ZERO;
@@ -103,45 +132,33 @@ pub fn part_two(input: &str) -> Option<u64> {
     }
 
     const GRID_MULTIPLIER: usize = 7;
+    let new_len = rocks_bits.len() * GRID_MULTIPLIER;
 
-    let original_rocks_bits = rocks_bits;
-    let mut rocks_bits = Vec::with_capacity(original_rocks_bits.len() * GRID_MULTIPLIER);
-    for _ in 0..GRID_MULTIPLIER {
-        rocks_bits.extend(original_rocks_bits.iter().copied());
-    }
-
-    for l_x_m in 1..GRID_MULTIPLIER {
+    for i in 1..GRID_MULTIPLIER {
         for r in rocks_bits.iter_mut() {
-            *r |= *r << (l_x_m * len_x);
+            *r |= *r << (i * len_x);
         }
     }
+    let rocks_bits = rocks_bits
+        .into_iter()
+        .cycle()
+        .take(new_len)
+        .collect::<Vec<_>>();
 
     let mut my_positions_bits = (0..rocks_bits.len())
         .map(|_| U1024::ZERO)
         .collect::<Vec<_>>();
     my_positions_bits[len_y * GRID_MULTIPLIER / 2] |= U1024::ONE << (len_x * GRID_MULTIPLIER / 2);
 
-    let mut results = vec![];
+    let magic_number_1 = len_x / 2;
+    let magic_number_2 = magic_number_1 + len_x;
+    let magic_number_3 = magic_number_2 + len_x;
 
-    let magic_number_1 = len_x as i64 / 2;
-    let magic_number_2 = magic_number_1 + len_x as i64;
-    let magic_number_3 = magic_number_2 + len_x as i64;
-
-    let mut i = 0;
-    while results.len() < 3 {
-        my_positions_bits = run_step(&my_positions_bits, &rocks_bits);
-
-        i += 1;
-
-        if i == magic_number_1 || i == magic_number_2 || i == magic_number_3 {
-            let i_result = my_positions_bits
-                .iter()
-                .map(|x| x.count_ones() as i64)
-                .sum::<i64>();
-
-            results.push((i, i_result));
-        }
-    }
+    let results = part_x(
+        [magic_number_1, magic_number_2, magic_number_3],
+        my_positions_bits,
+        rocks_bits,
+    );
 
     const NUMBER_OF_STEPS: i64 = 26501365;
 
