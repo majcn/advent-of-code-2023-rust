@@ -1,15 +1,11 @@
 advent_of_code::solution!(21);
 
+use advent_of_code::util::bignumbers::U1024;
+
 use std::collections::HashSet;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-struct Location {
-    x: usize,
-    y: usize,
-}
-
 struct Data {
-    rock_locations: HashSet<Location>,
+    rock_locations: HashSet<(usize, usize)>,
     len_x: usize,
     len_y: usize,
 }
@@ -23,7 +19,7 @@ fn parse_data(input: &str) -> Data {
     for (y, line) in input.lines().enumerate() {
         for (x, v) in line.chars().enumerate() {
             if v == '#' {
-                rock_locations.insert(Location { x, y });
+                rock_locations.insert((x, y));
             }
         }
     }
@@ -35,78 +31,55 @@ fn parse_data(input: &str) -> Data {
     }
 }
 
-// def do_magic(my_positions_bits):
-//     new_position_bits = [x for x in my_positions_bits]
-//     for y in range(1, len_y - 1):
-//         left = my_positions_bits[y] << 1
-//         right = my_positions_bits[y] >> 1
-//         up = my_positions_bits[y-1]
-//         down = my_positions_bits[y+1]
+fn run_step(my_positions_bits: &[U1024], rocks_bits: &[U1024]) -> Vec<U1024> {
+    let mut new_positions_bits = my_positions_bits.iter().copied().collect::<Vec<_>>();
 
-//         new_position_bits[y] = (new_position_bits[y] | left | right | up | down) & ~my_positions_bits[y] & ~rocks_bits[y]
+    for y in 1..my_positions_bits.len() - 1 {
+        let left = my_positions_bits[y] << 1;
+        let right = my_positions_bits[y] >> 1;
+        let up = my_positions_bits[y - 1];
+        let down = my_positions_bits[y + 1];
 
-//     return new_position_bits
-
-fn run_step(
-    my_locations: HashSet<Location>,
-    rock_locations: &HashSet<Location>,
-    len_x: usize,
-    len_y: usize,
-) -> HashSet<Location> {
-    let mut new_locations = HashSet::with_capacity(my_locations.len() * 4);
-
-    for loc in my_locations.into_iter() {
-        let left = Location {
-            x: loc.x.wrapping_sub(1),
-            y: loc.y,
-        };
-
-        let right = Location {
-            x: loc.x + 1,
-            y: loc.y,
-        };
-
-        let up = Location {
-            x: loc.x,
-            y: loc.y.wrapping_sub(1),
-        };
-
-        let down = Location {
-            x: loc.x,
-            y: loc.y + 1,
-        };
-
-        new_locations.extend([left, right, up, down].iter().filter(|l| {
-            !rock_locations.contains(&Location {
-                x: l.x % len_x,
-                y: l.y % len_y,
-            })
-        }));
+        new_positions_bits[y] = (new_positions_bits[y] | left | right | up | down)
+            & !my_positions_bits[y]
+            & !rocks_bits[y]
     }
 
-    new_locations
+    new_positions_bits
 }
 
-pub fn part_one(input: &str) -> Option<u32> {
+pub fn part_one(input: &str) -> Option<u64> {
     let Data {
         rock_locations,
         len_x,
         len_y,
     } = parse_data(input);
 
-    let start_location = Location {
-        x: len_x / 2,
-        y: len_y / 2,
-    };
+    let mut rocks_bits = vec![!U1024::ZERO];
+    for y in 0..len_y {
+        let mut rocks_bits_line = U1024::ZERO;
+        for x in 0..len_x {
+            if rock_locations.contains(&(x, y)) {
+                rocks_bits_line |= U1024::ONE << (x + 1)
+            }
+            rocks_bits_line |= U1024::ONE;
+            rocks_bits_line |= U1024::ONE << (len_x + 1)
+        }
+        rocks_bits.push(rocks_bits_line);
+    }
+    rocks_bits.push(!U1024::ZERO);
 
-    let my_locations = (0..64).fold(HashSet::from([start_location]), |acc, _| {
-        run_step(acc, &rock_locations, len_x, len_y)
-            .into_iter()
-            .filter(|l| (0..len_x).contains(&l.x) && (0..len_y).contains(&l.y))
-            .collect()
-    });
+    let mut my_positions_bits = (0..rocks_bits.len())
+        .map(|_| U1024::ZERO)
+        .collect::<Vec<_>>();
+    my_positions_bits[(len_y + 2) / 2] |= U1024::ONE << ((len_x + 2) / 2);
 
-    let result = my_locations.len() as u32;
+    let my_positions_bits = (0..64).fold(my_positions_bits, |acc, _| run_step(&acc, &rocks_bits));
+
+    let result = my_positions_bits
+        .iter()
+        .map(|x| x.count_ones() as u64)
+        .sum();
 
     Some(result)
 }
@@ -118,26 +91,55 @@ pub fn part_two(input: &str) -> Option<u64> {
         len_y,
     } = parse_data(input);
 
-    let start_location = Location {
-        x: len_x * 2 + len_x / 2,
-        y: len_y * 2 + len_y / 2,
-    };
+    let mut rocks_bits = vec![];
+    for y in 0..len_y {
+        let mut rocks_bits_line = U1024::ZERO;
+        for x in 0..len_x {
+            if rock_locations.contains(&(x, y)) {
+                rocks_bits_line |= U1024::ONE << x
+            }
+        }
+        rocks_bits.push(rocks_bits_line);
+    }
+
+    const GRID_MULTIPLIER: usize = 7;
+
+    let original_rocks_bits = rocks_bits;
+    let mut rocks_bits = Vec::with_capacity(original_rocks_bits.len() * GRID_MULTIPLIER);
+    for _ in 0..GRID_MULTIPLIER {
+        rocks_bits.extend(original_rocks_bits.iter().copied());
+    }
+
+    for l_x_m in 1..GRID_MULTIPLIER {
+        for r in rocks_bits.iter_mut() {
+            *r |= *r << (l_x_m * len_x);
+        }
+    }
+
+    let mut my_positions_bits = (0..rocks_bits.len())
+        .map(|_| U1024::ZERO)
+        .collect::<Vec<_>>();
+    my_positions_bits[len_y * GRID_MULTIPLIER / 2] |= U1024::ONE << (len_x * GRID_MULTIPLIER / 2);
 
     let mut results = vec![];
-    let mut my_locations = HashSet::from([start_location]);
 
-    let magic_number_1 = len_x / 2;
-    let magic_number_2 = magic_number_1 + len_x;
-    let magic_number_3 = magic_number_2 + len_x;
+    let magic_number_1 = len_x as i64 / 2;
+    let magic_number_2 = magic_number_1 + len_x as i64;
+    let magic_number_3 = magic_number_2 + len_x as i64;
 
     let mut i = 0;
     while results.len() < 3 {
-        my_locations = run_step(my_locations, &rock_locations, len_x, len_y);
+        my_positions_bits = run_step(&my_positions_bits, &rocks_bits);
 
         i += 1;
 
         if i == magic_number_1 || i == magic_number_2 || i == magic_number_3 {
-            results.push((i as i64, my_locations.len() as i64));
+            let i_result = my_positions_bits
+                .iter()
+                .map(|x| x.count_ones() as i64)
+                .sum::<i64>();
+
+            results.push((i, i_result));
         }
     }
 
