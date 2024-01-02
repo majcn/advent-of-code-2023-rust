@@ -112,7 +112,7 @@ fn simplify_graph(
     )
 }
 
-fn dfs<F>(
+fn find_all_paths<F>(
     graph: &[Vec<(NodeId, u32)>],
     node: NodeId,
     cost: u32,
@@ -127,7 +127,7 @@ fn dfs<F>(
 
     for &(new_node, new_cost) in &graph[node] {
         if !visited[new_node] {
-            dfs(graph, new_node, cost + new_cost, dfs_visitor, visited);
+            find_all_paths(graph, new_node, cost + new_cost, dfs_visitor, visited);
         }
     }
 
@@ -148,7 +148,7 @@ where
         }
     };
 
-    dfs(
+    find_all_paths(
         &graph,
         start,
         0,
