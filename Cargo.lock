@@ -6,6 +6,7 @@ version = 3
 name = "advent_of_code"
 version = "0.9.3"
 dependencies = [
+ "fastrand",
  "pico-args",
  "regex",
 ]
@@ -18,6 +19,12 @@ checksum = "b2969dcb958b36655471fc61f7e416fa76033bdd4bfed0678d8fee1e2d07a1f0"
 dependencies = [
  "memchr",
 ]
+
+[[package]]
+name = "fastrand"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25cbce373ec4653f1a01a31e8a5e5ec0c622dc27ff9c4e6606eefef5cbbed4a5"
 
 [[package]]
 name = "memchr"
