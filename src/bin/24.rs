@@ -1,10 +1,15 @@
 advent_of_code::solution!(24);
 
-use std::io::Write;
-use std::process::Command;
-use std::process::Stdio;
+struct Hailstone {
+    x: i64,
+    y: i64,
+    z: i64,
+    vx: i64,
+    vy: i64,
+    vz: i64,
+}
 
-fn parse_data(input: &str) -> Vec<([i128; 3], [i128; 3])> {
+fn parse_data(input: &str) -> Vec<Hailstone> {
     let mut result = vec![];
 
     for line in input.lines() {
@@ -12,56 +17,24 @@ fn parse_data(input: &str) -> Vec<([i128; 3], [i128; 3])> {
         let position = position_str
             .split(',')
             .map(|x| x.trim().parse().unwrap())
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();
+            .collect::<Vec<_>>();
 
         let velocity = velocity_str
             .split(',')
             .map(|x| x.trim().parse().unwrap())
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();
+            .collect::<Vec<_>>();
 
-        result.push((position, velocity));
+        result.push(Hailstone {
+            x: position[0],
+            y: position[1],
+            z: position[2],
+            vx: velocity[0],
+            vy: velocity[1],
+            vz: velocity[2],
+        });
     }
 
     result
-}
-
-fn line_intersection(
-    position1: [i128; 3],
-    velocity1: [i128; 3],
-    position2: [i128; 3],
-    velocity2: [i128; 3],
-) -> Option<(i128, i128)> {
-    let line1 = (
-        (position1[0], position1[1]),
-        (position1[0] + velocity1[0], position1[1] + velocity1[1]),
-    );
-
-    let line2 = (
-        (position2[0], position2[1]),
-        (position2[0] + velocity2[0], position2[1] + velocity2[1]),
-    );
-
-    let x_diff = ((line1.0 .0 - line1.1 .0), (line2.0 .0 - line2.1 .0));
-    let y_diff = ((line1.0 .1 - line1.1 .1), (line2.0 .1 - line2.1 .1));
-
-    fn det(a: (i128, i128), b: (i128, i128)) -> i128 {
-        a.0 * b.1 - a.1 * b.0
-    }
-
-    let div = det(x_diff, y_diff);
-    if div == 0 {
-        return None;
-    }
-
-    let d = (det(line1.0, line1.1), det(line2.0, line2.1));
-    let x = det(d, x_diff) / div;
-    let y = det(d, y_diff) / div;
-
-    Some((x, y))
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
@@ -70,14 +43,33 @@ pub fn part_one(input: &str) -> Option<u32> {
     let mut result = 0;
     for i in 0..data.len() {
         for j in (i + 1)..data.len() {
-            if let Some((x, y)) = line_intersection(data[i].0, data[i].1, data[j].0, data[j].1) {
-                if (200000000000000..=400000000000000).contains(&x)
-                    && (200000000000000..=400000000000000).contains(&y)
-                    && (x - data[i].0[0]) / data[i].1[0] > 0
-                    && (x - data[j].0[0]) / data[j].1[0] > 0
-                {
-                    result += 1;
-                }
+            let x1 = data[i].x;
+            let x2 = data[i].x + data[i].vx;
+            let x3 = data[j].x;
+            let x4 = data[j].x + data[j].vx;
+
+            let y1 = data[i].y;
+            let y2 = data[i].y + data[i].vy;
+            let y3 = data[j].y;
+            let y4 = data[j].y + data[j].vy;
+
+            let det = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+            if det == 0 {
+                continue;
+            }
+
+            let t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / det;
+            let u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / det;
+
+            let x = x1 + t * (x2 - x1);
+            let y = y1 + t * (y2 - y1);
+
+            if (200000000000000..=400000000000000).contains(&x)
+                && (200000000000000..=400000000000000).contains(&y)
+                && t > 0
+                && u > 0
+            {
+                result += 1;
             }
         }
     }
@@ -85,78 +77,73 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(result)
 }
 
-pub fn part_two(input: &str) -> Option<u64> {
-    let data = parse_data(input);
+fn gaussian_elimination<const N: usize>(
+    coefficients: &mut [[f64; N]; N],
+    rhs: &mut [f64; N],
+) -> [f64; N] {
+    for p in 0..N {
+        let mut max_i = p;
+        for i in p + 1..N {
+            if coefficients[i][p].abs() > coefficients[max_i][p].abs() {
+                max_i = i;
+            }
+        }
 
-    const Z3_TEMPLATE: &str = r"
-(declare-const x_rock Int)
-(declare-const y_rock Int)
-(declare-const z_rock Int)
-(declare-const vx_rock Int)
-(declare-const vy_rock Int)
-(declare-const vz_rock Int)
-(declare-const t_1 Int)
-(declare-const t_2 Int)
-(declare-const t_3 Int)
-(assert (>= t_1 0))
-(assert (>= t_2 0))
-(assert (>= t_3 0))
-(assert (= (+ @@P_1_X@@ (* t_1 @@V_1_X@@)) (+ x_rock (* t_1 vx_rock))))
-(assert (= (+ @@P_1_Y@@ (* t_1 @@V_1_Y@@)) (+ y_rock (* t_1 vy_rock))))
-(assert (= (+ @@P_1_Z@@ (* t_1 @@V_1_Z@@)) (+ z_rock (* t_1 vz_rock))))
-(assert (= (+ @@P_2_X@@ (* t_2 @@V_2_X@@)) (+ x_rock (* t_2 vx_rock))))
-(assert (= (+ @@P_2_Y@@ (* t_2 @@V_2_Y@@)) (+ y_rock (* t_2 vy_rock))))
-(assert (= (+ @@P_2_Z@@ (* t_2 @@V_2_Z@@)) (+ z_rock (* t_2 vz_rock))))
-(assert (= (+ @@P_3_X@@ (* t_3 @@V_3_X@@)) (+ x_rock (* t_3 vx_rock))))
-(assert (= (+ @@P_3_Y@@ (* t_3 @@V_3_Y@@)) (+ y_rock (* t_3 vy_rock))))
-(assert (= (+ @@P_3_Z@@ (* t_3 @@V_3_Z@@)) (+ z_rock (* t_3 vz_rock))))
-(declare-const result Int)
-(assert (= result (+ x_rock y_rock z_rock)))
-(check-sat)
-(get-value (result))
-(exit)
-";
+        coefficients.swap(p, max_i);
+        rhs.swap(p, max_i);
 
-    let mut z3_code = String::from(Z3_TEMPLATE);
-
-    fn to_z3_var_string(x: i128) -> String {
-        if x < 0 {
-            format!("(- {})", x.abs())
-        } else {
-            x.to_string()
+        for i in p + 1..N {
+            let ratio = coefficients[i][p] / coefficients[p][p];
+            for j in p..N {
+                coefficients[i][j] -= coefficients[p][j] * ratio;
+            }
+            rhs[i] -= rhs[p] * ratio;
         }
     }
 
-    for (i, item) in data.iter().enumerate().take(4).skip(1) {
-        z3_code = z3_code.replace(&format!("@@P_{i}_X@@"), &to_z3_var_string(item.0[0]));
-        z3_code = z3_code.replace(&format!("@@P_{i}_Y@@"), &to_z3_var_string(item.0[1]));
-        z3_code = z3_code.replace(&format!("@@P_{i}_Z@@"), &to_z3_var_string(item.0[2]));
-        z3_code = z3_code.replace(&format!("@@V_{i}_X@@"), &to_z3_var_string(item.1[0]));
-        z3_code = z3_code.replace(&format!("@@V_{i}_Y@@"), &to_z3_var_string(item.1[1]));
-        z3_code = z3_code.replace(&format!("@@V_{i}_Z@@"), &to_z3_var_string(item.1[2]));
+    let mut resut = *rhs;
+    for i in (0..N).rev() {
+        let s = (i + 1..N)
+            .map(|j| coefficients[i][j] * resut[j])
+            .sum::<f64>();
+        resut[i] = (resut[i] - s) / coefficients[i][i];
     }
+    resut
+}
 
-    let mut child = Command::new("z3")
-        .arg("-in")
-        .stdin(Stdio::piped())
-        .stderr(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .unwrap();
+pub fn part_two(input: &str) -> Option<u64> {
+    let data = parse_data(input);
 
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(z3_code.as_bytes())
-        .unwrap();
+    let mut coefficients = [[0f64; 4]; 4];
+    let mut rhs = [0f64; 4];
+    for i in 0..4 {
+        let h1 = &data[i];
+        let h2 = &data[i + 1];
 
-    let output = child.wait_with_output().unwrap();
+        coefficients[i][0] = (h2.vy - h1.vy) as f64;
+        coefficients[i][1] = (h1.y - h2.y) as f64;
+        coefficients[i][2] = (h1.vx - h2.vx) as f64;
+        coefficients[i][3] = (h2.x - h1.x) as f64;
+        rhs[i] = (h1.y * h1.vx - h1.x * h1.vy + h2.x * h2.vy - h2.y * h2.vx) as f64;
+    }
+    let [rock_x, rock_vx, rock_y, _] =
+        gaussian_elimination(&mut coefficients, &mut rhs).map(|x| x.round() as i64);
 
-    let raw_output = String::from_utf8(output.stdout).unwrap();
+    let mut coefficients = [[0f64; 2]; 2];
+    let mut rhs = [0f64; 2];
+    for i in 0..2 {
+        let h1 = &data[i];
 
-    let result = raw_output.split_ascii_whitespace().last().unwrap();
-    let result = result[..result.len() - 2].parse().unwrap();
+        let t = (h1.x - rock_x) as f64 / (rock_vx - h1.vx) as f64;
+
+        coefficients[i][0] = 1f64;
+        coefficients[i][1] = t;
+        rhs[i] = h1.z as f64 + t * h1.vz as f64;
+    }
+    let [rock_z, _] = gaussian_elimination(&mut coefficients, &mut rhs).map(|x| x.round() as i64);
+
+    let result = rock_x + rock_y + rock_z;
+    let result = result as u64;
 
     Some(result)
 }
