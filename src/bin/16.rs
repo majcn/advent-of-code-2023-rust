@@ -2,7 +2,7 @@ advent_of_code::solution!(16);
 
 use advent_of_code::util::list::Array2D;
 
-use std::collections::HashSet;
+use advent_of_code::maneatingape::hash::*;
 
 struct Grid {
     data: Array2D<char>,
@@ -78,7 +78,7 @@ fn follow_the_light(
     start_location: (usize, usize),
     start_direction: Direction,
 ) -> u32 {
-    let mut cache = HashSet::new();
+    let mut cache = FastSet::new();
 
     let mut queue = next_directions(grid, &start_location, &start_direction)
         .into_iter()
@@ -101,7 +101,7 @@ fn follow_the_light(
         }
     }
 
-    cache.into_iter().map(|x| x.0).collect::<HashSet<_>>().len() as u32
+    cache.into_iter().map(|x| x.0).collect::<FastSet<_>>().len() as u32
 }
 
 pub fn part_one(input: &str) -> Option<u32> {

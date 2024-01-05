@@ -1,6 +1,6 @@
 advent_of_code::solution!(7);
 
-use std::collections::HashMap;
+use advent_of_code::maneatingape::hash::*;
 
 struct Hand {
     cards: Vec<char>,
@@ -36,7 +36,7 @@ fn parse_data(input: &str) -> Vec<Hand> {
 }
 
 fn calculate_power(hand: &Hand, joker_mode: bool) -> HandPower {
-    let mut counter = HashMap::with_capacity(hand.cards.len());
+    let mut counter = FastMap::with_capacity(hand.cards.len());
 
     for x in &hand.cards {
         *counter.entry(x).or_default() += 1;

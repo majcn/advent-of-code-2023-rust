@@ -1,6 +1,6 @@
 advent_of_code::solution!(19);
 
-use std::collections::HashMap;
+use advent_of_code::maneatingape::hash::*;
 
 #[derive(Clone, Copy)]
 enum ConditionExpression {
@@ -30,7 +30,7 @@ struct TreeNode {
     value: Option<NodeValue>,
 }
 
-fn create_node(data: &HashMap<&str, &str>, name: &str) -> TreeNode {
+fn create_node(data: &FastMap<&str, &str>, name: &str) -> TreeNode {
     let name = data.get(name).unwrap_or(&name);
 
     if name == &"A" {
@@ -85,7 +85,7 @@ fn parse_data(input: &str) -> (TreeNode, Vec<Vec<u32>>) {
         .lines()
         .map(|line| &line[..line.len() - 1])
         .map(|line| line.split_once('{').unwrap())
-        .collect::<HashMap<_, _>>();
+        .collect::<FastMap<_, _>>();
 
     let root = create_node(&workflows, "in");
 

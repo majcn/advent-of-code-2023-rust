@@ -1,6 +1,6 @@
 advent_of_code::solution!(11);
 
-use std::collections::HashSet;
+use advent_of_code::maneatingape::hash::*;
 
 #[derive(PartialEq, Eq, Hash)]
 struct Point {
@@ -9,7 +9,7 @@ struct Point {
 }
 
 struct Grid {
-    data: HashSet<Point>,
+    data: FastSet<Point>,
     max_x: usize,
     max_y: usize,
 }
@@ -17,7 +17,7 @@ struct Grid {
 fn parse_data(input: &str) -> Grid {
     let mut max_x = 0;
     let mut max_y = 0;
-    let mut data = HashSet::new();
+    let mut data = FastSet::new();
 
     for (y, line) in input.lines().enumerate() {
         for (x, v) in line.as_bytes().iter().enumerate() {

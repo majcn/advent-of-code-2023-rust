@@ -1,6 +1,7 @@
 advent_of_code::solution!(20);
 
-use std::collections::HashMap;
+use advent_of_code::maneatingape::hash::*;
+
 use std::collections::VecDeque;
 
 #[derive(Clone, Copy)]
@@ -105,9 +106,9 @@ impl Broadcast {
 const SPECIAL_OUTPUT_ID: usize = 10000;
 
 fn parse_data(input: &str) -> (Vec<Module>, usize) {
-    let mut inputs: HashMap<&str, Vec<&str>> = HashMap::new();
-    let mut outputs: HashMap<&str, Vec<&str>> = HashMap::new();
-    let mut ids = HashMap::new();
+    let mut inputs: FastMap<&str, Vec<&str>> = FastMap::new();
+    let mut outputs: FastMap<&str, Vec<&str>> = FastMap::new();
+    let mut ids = FastMap::new();
 
     ids.insert("rx", SPECIAL_OUTPUT_ID);
 

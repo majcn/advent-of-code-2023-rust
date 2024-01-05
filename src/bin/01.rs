@@ -1,12 +1,12 @@
 advent_of_code::solution!(1);
 
-use std::collections::HashMap;
+use advent_of_code::maneatingape::hash::*;
 
 fn parse_data(input: &str) -> Vec<&str> {
     input.lines().collect()
 }
 
-fn part_x(data: Vec<&str>, digit_map: HashMap<&str, u8>) -> u32 {
+fn part_x(data: Vec<&str>, digit_map: FastMap<&str, u8>) -> u32 {
     let mut result = 0;
     for line in data.into_iter() {
         let mut tmp_result = vec![];
@@ -33,7 +33,7 @@ fn part_x(data: Vec<&str>, digit_map: HashMap<&str, u8>) -> u32 {
 pub fn part_one(input: &str) -> Option<u32> {
     let data = parse_data(input);
 
-    let digit_map = HashMap::from([
+    let digit_map = FastMap::build([
         ("1", 1),
         ("2", 2),
         ("3", 3),
@@ -53,7 +53,7 @@ pub fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u32> {
     let data = parse_data(input);
 
-    let digit_map = HashMap::from([
+    let digit_map = FastMap::build([
         ("1", 1),
         ("one", 1),
         ("2", 2),

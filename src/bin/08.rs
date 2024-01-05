@@ -1,19 +1,19 @@
 advent_of_code::solution!(8);
 
-use std::collections::HashMap;
+use advent_of_code::maneatingape::hash::*;
 
 type MyLocation = [char; 3];
 
 struct State {
     instructions: Vec<char>,
-    graph: HashMap<MyLocation, (MyLocation, MyLocation)>,
+    graph: FastMap<MyLocation, (MyLocation, MyLocation)>,
 }
 
 fn parse_data(input: &str) -> State {
     let (instructions_str, graph_str) = input.split_once("\n\n").unwrap();
     let instructions = instructions_str.chars().collect();
 
-    let mut graph = HashMap::new();
+    let mut graph = FastMap::new();
     for line in graph_str.lines() {
         let key = line[..3].chars().collect::<Vec<_>>().try_into().unwrap();
         let left = line[7..10].chars().collect::<Vec<_>>().try_into().unwrap();

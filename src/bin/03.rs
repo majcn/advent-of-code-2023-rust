@@ -2,9 +2,9 @@ advent_of_code::solution!(3);
 
 use advent_of_code::util::point::Point;
 
-use regex::Regex;
+use advent_of_code::maneatingape::hash::*;
 
-use std::collections::HashMap;
+use regex::Regex;
 
 #[derive(Default)]
 struct Number {
@@ -12,7 +12,7 @@ struct Number {
     locations: Vec<Point>,
 }
 
-type Symbols = HashMap<Point, char>;
+type Symbols = FastMap<Point, char>;
 
 fn parse_data(input: &str) -> (Vec<Number>, Symbols) {
     let mut numbers = vec![];
@@ -82,7 +82,7 @@ pub fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u32> {
     let (numbers, symbols) = parse_data(input);
 
-    let mut symbol_values: HashMap<Point, Vec<u32>> = HashMap::new();
+    let mut symbol_values: FastMap<Point, Vec<u32>> = FastMap::new();
 
     for number in numbers {
         if let Some(symbol_location) = find_symbol_location(&number, &symbols) {

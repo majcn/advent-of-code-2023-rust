@@ -1,8 +1,8 @@
 advent_of_code::solution!(14);
 
 use std::collections::BTreeSet;
-use std::collections::HashMap;
-use std::collections::HashSet;
+
+use advent_of_code::maneatingape::hash::*;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 struct Point {
@@ -10,7 +10,7 @@ struct Point {
     y: usize,
 }
 
-type Rocks = HashSet<Point>;
+type Rocks = FastSet<Point>;
 
 struct Platform {
     rounded_rocks: Rocks,
@@ -153,7 +153,7 @@ pub fn part_two(input: &str) -> Option<u32> {
     const MAX_CYCLES: usize = 1000000000;
 
     let mut platform = parse_data(input);
-    let mut cache = HashMap::new();
+    let mut cache = FastMap::new();
 
     let mut i = 0;
     while i < MAX_CYCLES {

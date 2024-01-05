@@ -1,6 +1,6 @@
 advent_of_code::solution!(12);
 
-use std::collections::HashMap;
+use advent_of_code::maneatingape::hash::*;
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 enum Spring {
@@ -40,7 +40,7 @@ fn parse_data(input: &str) -> Vec<State> {
 
 #[derive(Default)]
 struct MemoPartX<'a> {
-    cache: HashMap<(&'a [Spring], &'a [u32]), u64>,
+    cache: FastMap<(&'a [Spring], &'a [u32]), u64>,
 }
 
 impl<'a> MemoPartX<'a> {

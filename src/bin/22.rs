@@ -1,8 +1,6 @@
 advent_of_code::solution!(22);
 
-use std::collections::HashMap;
-use std::collections::HashSet;
-
+use advent_of_code::maneatingape::hash::*;
 use advent_of_code::maneatingape::iter::*;
 use advent_of_code::maneatingape::parse::*;
 
@@ -41,7 +39,7 @@ fn parse_data(input: &str) -> Vec<Brick> {
         .collect()
 }
 
-fn part_x(mut bricks: Vec<Brick>) -> Vec<HashSet<BrickId>> {
+fn part_x(mut bricks: Vec<Brick>) -> Vec<FastSet<BrickId>> {
     bricks.sort_unstable_by_key(|b| b.p1.z);
     for (i, b) in bricks.iter_mut().enumerate() {
         b.id = i;
@@ -56,7 +54,7 @@ fn part_x(mut bricks: Vec<Brick>) -> Vec<HashSet<BrickId>> {
             && brick1.p2.y >= brick2.p1.y
     };
 
-    let mut max_z = HashMap::new();
+    let mut max_z = FastMap::new();
     let mut new_bricks: Vec<Brick> = Vec::with_capacity(bricks.len());
     for brick in bricks {
         let mut best_z = 0;
@@ -79,7 +77,7 @@ fn part_x(mut bricks: Vec<Brick>) -> Vec<HashSet<BrickId>> {
             .filter(|b| b.p2.z == best_z)
             .filter(|b| does_intersect_xy(&&brick, b))
             .map(|b| b.id)
-            .collect::<HashSet<_>>();
+            .collect::<FastSet<_>>();
 
         result.push(supporting_bricks);
 
@@ -120,7 +118,7 @@ pub fn part_two(input: &str) -> Option<u32> {
 
     let result = (0..graph.len())
         .map(|start_i| {
-            let mut destroyed = HashSet::from([start_i]);
+            let mut destroyed = FastSet::build([start_i]);
             let mut changes = true;
 
             while changes {

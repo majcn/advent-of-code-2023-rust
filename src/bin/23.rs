@@ -2,8 +2,7 @@ advent_of_code::solution!(23);
 
 use advent_of_code::util::list::Array2D;
 
-use std::collections::HashMap;
-use std::collections::HashSet;
+use advent_of_code::maneatingape::hash::*;
 
 enum GridValue {
     Path,
@@ -53,11 +52,11 @@ fn parse_data(input: &str) -> Grid {
     }
 }
 
-fn generate_graph<F>(grid: &Grid, get_neighbors: F) -> HashMap<(Location, Location), u32>
+fn generate_graph<F>(grid: &Grid, get_neighbors: F) -> FastMap<(Location, Location), u32>
 where
     F: Fn(&Grid, &Location, &Location) -> Vec<Location>,
 {
-    let mut graph = HashMap::new();
+    let mut graph = FastMap::new();
 
     let mut queue = vec![(grid.start_location, grid.start_location, 0)];
     while let Some((cross_loc, path_loc, init_cost)) = queue.pop() {
@@ -87,18 +86,18 @@ where
 }
 
 fn simplify_graph(
-    graph: HashMap<(Location, Location), u32>,
+    graph: FastMap<(Location, Location), u32>,
     start_location: &Location,
     end_location: &Location,
 ) -> (Vec<Vec<(NodeId, u32)>>, NodeId, NodeId) {
     let idx_mapper = graph
         .keys()
         .flat_map(|(from, to)| [from, to])
-        .collect::<HashSet<_>>()
+        .collect::<FastSet<_>>()
         .into_iter()
         .enumerate()
         .map(|(i, x)| (x, i))
-        .collect::<HashMap<_, _>>();
+        .collect::<FastMap<_, _>>();
 
     let mut graph_as_vec = vec![vec![]; idx_mapper.len()];
     for ((from, to), cost) in &graph {

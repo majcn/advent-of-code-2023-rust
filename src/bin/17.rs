@@ -2,9 +2,8 @@ advent_of_code::solution!(17);
 
 use advent_of_code::util::list::Array2D;
 
-use std::collections::BinaryHeap;
-use std::collections::HashMap;
-use std::collections::HashSet;
+use advent_of_code::maneatingape::hash::*;
+use advent_of_code::maneatingape::heap::*;
 
 struct Grid {
     data: Array2D<u32>,
@@ -38,30 +37,6 @@ struct Element {
     y: usize,
     direction: Direction,
     direction_count: u8,
-}
-
-#[derive(PartialEq, Eq)]
-struct QueueElement {
-    element: Element,
-    cost: u32,
-}
-
-impl QueueElement {
-    fn new(element: Element, cost: u32) -> Self {
-        Self { element, cost }
-    }
-}
-
-impl PartialOrd for QueueElement {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for QueueElement {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        other.cost.cmp(&self.cost)
-    }
 }
 
 fn get_neighbors_part_1(grid: &Grid, element: &Element) -> Vec<Element> {
@@ -253,21 +228,21 @@ where
         element.x == grid.len_x - 1 && element.y == grid.len_y - 1
     }
 
-    let mut visited = HashSet::new();
+    let mut visited = FastSet::new();
 
-    let mut dist = HashMap::new();
+    let mut dist = FastMap::new();
     dist.insert(root_element_right, 0);
     dist.insert(root_element_down, 0);
 
-    let mut queue = BinaryHeap::new();
-    queue.push(QueueElement::new(root_element_right, 0));
-    queue.push(QueueElement::new(root_element_down, 0));
+    let mut queue = MinHeap::new();
+    queue.push(0, root_element_right);
+    queue.push(0, root_element_down);
 
     while let Some(queue_element) = queue.pop() {
-        let element = &queue_element.element;
+        let element = &queue_element.1;
 
         if is_goal(grid, element) {
-            return queue_element.cost;
+            return queue_element.0;
         }
 
         if visited.contains(element) {
@@ -283,10 +258,7 @@ where
             let dist_to_new_element = dist_element + grid.data[(new_element.x, new_element.y)];
             if dist_to_new_element < *dist_new_element {
                 dist.insert(new_element, dist_to_new_element);
-                queue.push(QueueElement {
-                    element: new_element,
-                    cost: dist_to_new_element,
-                });
+                queue.push(dist_to_new_element, new_element);
             }
         }
     }

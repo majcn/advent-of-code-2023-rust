@@ -1,8 +1,8 @@
 advent_of_code::solution!(25);
 
-use std::collections::HashMap;
+use advent_of_code::maneatingape::hash::*;
 
-fn parse_data(input: &str) -> HashMap<&str, Vec<&str>> {
+fn parse_data(input: &str) -> FastMap<&str, Vec<&str>> {
     input
         .lines()
         .map(|line| (&line[..3], line[5..].split(' ').collect()))
@@ -94,11 +94,11 @@ pub fn part_one(input: &str) -> Option<u32> {
     let vertices_map = edges
         .iter()
         .flat_map(|e| [e.0, e.1])
-        .collect::<std::collections::HashSet<_>>()
+        .collect::<FastSet<_>>()
         .into_iter()
         .enumerate()
         .map(|(i, v)| (v, i))
-        .collect::<HashMap<_, _>>();
+        .collect::<FastMap<_, _>>();
 
     let edges = edges
         .into_iter()

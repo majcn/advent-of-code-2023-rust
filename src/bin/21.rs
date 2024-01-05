@@ -2,10 +2,10 @@ advent_of_code::solution!(21);
 
 use advent_of_code::util::bignumbers::U1024;
 
-use std::collections::HashSet;
+use advent_of_code::maneatingape::hash::*;
 
 struct Data {
-    rock_locations: HashSet<(usize, usize)>,
+    rock_locations: FastSet<(usize, usize)>,
     len_x: usize,
     len_y: usize,
 }
@@ -14,7 +14,7 @@ fn parse_data(input: &str) -> Data {
     let len_x = input.lines().next().unwrap().len();
     let len_y = input.lines().count();
 
-    let mut rock_locations = HashSet::new();
+    let mut rock_locations = FastSet::new();
 
     for (y, line) in input.lines().enumerate() {
         for (x, v) in line.chars().enumerate() {
