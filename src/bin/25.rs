@@ -24,9 +24,14 @@ impl<'a> KargersAlgorithm<'a> {
         }
     }
 
-    fn find(parent: &mut [usize], node: usize) -> usize {
+    fn find(&self, parent: &mut [usize], node: usize) -> usize {
+        KargersAlgorithm::find_internal(parent, node)
+    }
+
+    // find with path compression technique
+    fn find_internal(parent: &mut [usize], node: usize) -> usize {
         if parent[node] != node {
-            parent[node] = KargersAlgorithm::find(parent, parent[node]);
+            parent[node] = KargersAlgorithm::find_internal(parent, parent[node]);
         }
 
         parent[node]
@@ -48,11 +53,15 @@ impl<'a> KargersAlgorithm<'a> {
         let mut parent = (0..vertices).collect::<Vec<_>>();
         let mut rank = vec![0; vertices];
 
-        while vertices > 2 {
-            let i = fastrand::usize(0..self.nr_edges);
+        let mut shuffled_edges_indices = (0..self.nr_edges).collect::<Vec<_>>();
+        fastrand::shuffle(&mut shuffled_edges_indices);
+        let mut shuffled_edges_indices_iter = shuffled_edges_indices.into_iter();
 
-            let subset_1 = KargersAlgorithm::find(&mut parent, self.edges[i].0);
-            let subset_2 = KargersAlgorithm::find(&mut parent, self.edges[i].1);
+        while vertices > 2 {
+            let i = shuffled_edges_indices_iter.next().unwrap();
+
+            let subset_1 = self.find(&mut parent, self.edges[i].0);
+            let subset_2 = self.find(&mut parent, self.edges[i].1);
 
             if subset_1 == subset_2 {
                 continue;
@@ -66,12 +75,7 @@ impl<'a> KargersAlgorithm<'a> {
         let cut_edges = self
             .edges
             .iter()
-            .map(|e| {
-                (
-                    KargersAlgorithm::find(&mut parent, e.0),
-                    KargersAlgorithm::find(&mut parent, e.1),
-                )
-            })
+            .map(|e| (self.find(&mut parent, e.0), self.find(&mut parent, e.1)))
             .filter(|(subset_1, subset_2)| subset_1 != subset_2)
             .count() as u32;
 
