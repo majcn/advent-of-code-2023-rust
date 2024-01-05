@@ -1,4 +1,4 @@
-use super::point::Point;
+use crate::maneatingape::point::Point;
 
 #[derive(Debug)]
 pub struct Array2D<T> {
