@@ -5,7 +5,6 @@ use advent_of_code::util::point::Point;
 use regex::Regex;
 
 use std::collections::HashMap;
-use std::ops::Add;
 
 #[derive(Default)]
 struct Number {
@@ -55,9 +54,9 @@ fn find_symbol_location(number: &Number, symbols: &Symbols) -> Option<Point> {
         Point::new(1, 1),
     ];
 
-    for number_location in number.locations.iter() {
+    for &number_location in number.locations.iter() {
         for n in NEIGHBORS {
-            let new_location = number_location.add(n);
+            let new_location = number_location + n;
 
             if symbols.contains_key(&new_location) {
                 return Some(new_location);
