@@ -15,16 +15,16 @@ type Rocks = FastSet<Point>;
 struct Platform {
     rounded_rocks: Rocks,
     cube_rocks: Rocks,
-    x_size: usize,
-    y_size: usize,
+    len_x: usize,
+    len_y: usize,
 }
 
 fn parse_data(input: &str) -> Platform {
     let mut rounded_rocks = Rocks::new();
     let mut cube_rocks = Rocks::new();
 
-    let x_size = input.lines().next().unwrap().len();
-    let y_size = input.lines().count();
+    let len_x = input.lines().next().unwrap().len();
+    let len_y = input.lines().count();
 
     for (y, line) in input.lines().enumerate() {
         for (x, v) in line.as_bytes().iter().enumerate() {
@@ -43,8 +43,8 @@ fn parse_data(input: &str) -> Platform {
     Platform {
         rounded_rocks,
         cube_rocks,
-        x_size,
-        y_size,
+        len_x,
+        len_y,
     }
 }
 
@@ -52,9 +52,9 @@ impl Platform {
     fn move_north(&mut self) {
         let mut new_rounded_rocks = Rocks::new();
 
-        for x in 0..self.x_size {
+        for x in 0..self.len_x {
             let mut max_location = 0;
-            for y in 0..self.y_size {
+            for y in 0..self.len_y {
                 if self.rounded_rocks.contains(&Point { x, y }) {
                     new_rounded_rocks.insert(Point { x, y: max_location });
                     max_location += 1;
@@ -70,9 +70,9 @@ impl Platform {
     fn move_west(&mut self) {
         let mut new_rounded_rocks = Rocks::new();
 
-        for y in 0..self.y_size {
+        for y in 0..self.len_y {
             let mut max_location = 0;
-            for x in 0..self.x_size {
+            for x in 0..self.len_x {
                 if self.rounded_rocks.contains(&Point { x, y }) {
                     new_rounded_rocks.insert(Point { x: max_location, y });
                     max_location += 1;
@@ -88,9 +88,9 @@ impl Platform {
     fn move_south(&mut self) {
         let mut new_rounded_rocks = Rocks::new();
 
-        for x in 0..self.x_size {
-            let mut max_location = self.y_size - 1;
-            for y in (0..self.y_size).rev() {
+        for x in 0..self.len_x {
+            let mut max_location = self.len_y - 1;
+            for y in (0..self.len_y).rev() {
                 if self.rounded_rocks.contains(&Point { x, y }) {
                     new_rounded_rocks.insert(Point { x, y: max_location });
                     if y == 0 {
@@ -112,9 +112,9 @@ impl Platform {
     fn move_east(&mut self) {
         let mut new_rounded_rocks = Rocks::new();
 
-        for y in 0..self.y_size {
-            let mut max_location = self.x_size - 1;
-            for x in (0..self.x_size).rev() {
+        for y in 0..self.len_y {
+            let mut max_location = self.len_x - 1;
+            for x in (0..self.len_x).rev() {
                 if self.rounded_rocks.contains(&Point { x, y }) {
                     new_rounded_rocks.insert(Point { x: max_location, y });
                     if x == 0 {
@@ -136,7 +136,7 @@ impl Platform {
     fn calculate_score(&self) -> u32 {
         let rev_score = self.rounded_rocks.iter().map(|rock| rock.y).sum::<usize>();
 
-        (self.y_size * self.rounded_rocks.len() - rev_score) as u32
+        (self.len_y * self.rounded_rocks.len() - rev_score) as u32
     }
 }
 

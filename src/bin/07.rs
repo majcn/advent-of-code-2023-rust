@@ -1,6 +1,7 @@
 advent_of_code::solution!(7);
 
 use advent_of_code::maneatingape::hash::*;
+use advent_of_code::maneatingape::parse::*;
 
 struct Hand {
     cards: Vec<char>,
@@ -29,7 +30,7 @@ fn parse_data(input: &str) -> Vec<Hand> {
         .lines()
         .map(|line| {
             let cards = line[..5].chars().collect();
-            let bid = line[6..].parse().unwrap();
+            let bid = (&line[6..]).unsigned();
             Hand { cards, bid }
         })
         .collect()
@@ -49,29 +50,15 @@ fn calculate_power(hand: &Hand, joker_mode: bool) -> HandPower {
     };
 
     let best_value = counter.values().max().unwrap_or(&0) + jokers;
-
-    if best_value == 5 {
-        return HandPower::FiveOfKind;
+    match (best_value, counter.len()) {
+        (5, _) => HandPower::FiveOfKind,
+        (4, _) => HandPower::FourOfKind,
+        (3, 2) => HandPower::FullHouse,
+        (3, _) => HandPower::ThreeOfKind,
+        (2, 3) => HandPower::TwoPairs,
+        (2, _) => HandPower::Pair,
+        _ => HandPower::None,
     }
-    if best_value == 4 {
-        return HandPower::FourOfKind;
-    }
-    if best_value == 3 {
-        if counter.values().count() == 2 {
-            return HandPower::FullHouse;
-        } else {
-            return HandPower::ThreeOfKind;
-        }
-    }
-    if best_value == 2 {
-        if counter.values().count() == 3 {
-            return HandPower::TwoPairs;
-        } else {
-            return HandPower::Pair;
-        }
-    }
-
-    HandPower::None
 }
 
 fn part_x(hands: &[Hand], joker_mode: bool) -> u32 {
@@ -109,7 +96,6 @@ fn part_x(hands: &[Hand], joker_mode: bool) -> u32 {
     state.sort_unstable_by(|a, b| {
         if a.power == b.power {
             let mut values_iter = a.values.iter().zip(b.values.iter());
-
             return values_iter
                 .find(|(av, bv)| av != bv)
                 .map(|(av, bv)| av.cmp(bv))

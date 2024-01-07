@@ -1,118 +1,93 @@
 advent_of_code::solution!(17);
 
-use advent_of_code::util::list::Array2D;
-
 use advent_of_code::maneatingape::hash::*;
 use advent_of_code::maneatingape::heap::*;
+use advent_of_code::maneatingape::point::*;
 
-struct Grid {
-    data: Array2D<u32>,
-    len_x: usize,
-    len_y: usize,
-}
+use advent_of_code::util::list::Array2D;
 
-fn parse_data(input: &str) -> Grid {
-    let len_x = input.lines().next().unwrap().len();
-    let len_y = input.lines().count();
-
-    let mut data = Array2D::new(len_x);
-    for line in input.lines() {
-        data.add_line(line.bytes().map(|x| (x - b'0') as u32));
-    }
-
-    Grid { data, len_x, len_y }
-}
-
-#[derive(PartialEq, Eq, Hash, Clone, Copy)]
-enum Direction {
-    Left,
-    Right,
-    Up,
-    Down,
-}
+type Direction = u8;
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 struct Element {
-    x: usize,
-    y: usize,
+    location: Point,
     direction: Direction,
     direction_count: u8,
 }
 
-fn get_neighbors_part_1(grid: &Grid, element: &Element) -> Vec<Element> {
+fn parse_data(input: &str) -> Array2D<u8> {
+    let mut grid = Array2D::new(input);
+    for y in 0..grid.len_y() {
+        for x in 0..grid.len_x() {
+            grid[&Point::new(x, y)] -= b'0';
+        }
+    }
+    grid
+}
+
+fn get_neighbors_part_1(grid: &Array2D<u8>, element: Element) -> Vec<Element> {
     let Element {
-        x,
-        y,
+        location,
         direction,
         direction_count,
-    } = *element;
+    } = element;
 
     let mut result = Vec::with_capacity(4);
 
-    if x > 0
-        && direction != Direction::Right
-        && !(direction_count >= 3 && direction == Direction::Left)
-    {
+    if location.x > 0 && direction != b'R' && !(direction_count >= 3 && direction == b'L') {
         let direction_count = match direction {
-            Direction::Left => direction_count + 1,
+            b'L' => direction_count + 1,
             _ => 1,
         };
 
         result.push(Element {
-            x: x - 1,
-            y,
-            direction: Direction::Left,
+            location: location + LEFT,
+            direction: b'L',
             direction_count,
         });
     }
 
-    if x < grid.len_x - 1
-        && direction != Direction::Left
-        && !(direction_count >= 3 && direction == Direction::Right)
+    if location.x < grid.len_x() - 1
+        && direction != b'L'
+        && !(direction_count >= 3 && direction == b'R')
     {
         let direction_count = match direction {
-            Direction::Right => direction_count + 1,
+            b'R' => direction_count + 1,
             _ => 1,
         };
 
         result.push(Element {
-            x: x + 1,
-            y,
-            direction: Direction::Right,
+            location: location + RIGHT,
+            direction: b'R',
             direction_count,
         });
     }
 
-    if y > 0
-        && direction != Direction::Down
-        && !(direction_count >= 3 && direction == Direction::Up)
-    {
+    if location.y > 0 && direction != b'D' && !(direction_count >= 3 && direction == b'U') {
         let direction_count = match direction {
-            Direction::Up => direction_count + 1,
+            b'U' => direction_count + 1,
             _ => 1,
         };
 
         result.push(Element {
-            x,
-            y: y - 1,
-            direction: Direction::Up,
+            location: location + UP,
+            direction: b'U',
             direction_count,
         });
     }
 
-    if y < grid.len_y - 1
-        && direction != Direction::Up
-        && !(direction_count >= 3 && direction == Direction::Down)
+    if location.y < grid.len_y() - 1
+        && direction != b'U'
+        && !(direction_count >= 3 && direction == b'D')
     {
         let direction_count = match direction {
-            Direction::Down => direction_count + 1,
+            b'D' => direction_count + 1,
             _ => 1,
         };
 
         result.push(Element {
-            x,
-            y: y + 1,
-            direction: Direction::Down,
+            location: location + DOWN,
+            direction: b'D',
             direction_count,
         });
     }
@@ -120,84 +95,79 @@ fn get_neighbors_part_1(grid: &Grid, element: &Element) -> Vec<Element> {
     result
 }
 
-fn get_neighbors_part_2(grid: &Grid, element: &Element) -> Vec<Element> {
+fn get_neighbors_part_2(grid: &Array2D<u8>, element: Element) -> Vec<Element> {
     let Element {
-        x,
-        y,
+        location,
         direction,
         direction_count,
-    } = *element;
+    } = element;
 
     let mut result = Vec::with_capacity(4);
 
-    if x > 0
-        && direction != Direction::Right
-        && !(direction_count < 4 && direction != Direction::Left)
-        && !(direction_count >= 10 && direction == Direction::Left)
+    if location.x > 0
+        && direction != b'R'
+        && !(direction_count < 4 && direction != b'L')
+        && !(direction_count >= 10 && direction == b'L')
     {
         let direction_count = match direction {
-            Direction::Left => direction_count + 1,
+            b'L' => direction_count + 1,
             _ => 1,
         };
 
         result.push(Element {
-            x: x - 1,
-            y,
-            direction: Direction::Left,
+            location: location + LEFT,
+            direction: b'L',
             direction_count,
         });
     }
 
-    if x < grid.len_x - 1
-        && direction != Direction::Left
-        && !(direction_count < 4 && direction != Direction::Right)
-        && !(direction_count >= 10 && direction == Direction::Right)
+    if location.x < grid.len_x() - 1
+        && direction != b'L'
+        && !(direction_count < 4 && direction != b'R')
+        && !(direction_count >= 10 && direction == b'R')
     {
         let direction_count = match direction {
-            Direction::Right => direction_count + 1,
+            b'R' => direction_count + 1,
             _ => 1,
         };
 
         result.push(Element {
-            x: x + 1,
-            y,
-            direction: Direction::Right,
+            location: location + RIGHT,
+            direction: b'R',
             direction_count,
         });
     }
 
-    if y > 0
-        && direction != Direction::Down
-        && !(direction_count < 4 && direction != Direction::Up)
-        && !(direction_count >= 10 && direction == Direction::Up)
+    if location.y > 0
+        && direction != b'D'
+        && !(direction_count < 4 && direction != b'U')
+        && !(direction_count >= 10 && direction == b'U')
     {
         let direction_count = match direction {
-            Direction::Up => direction_count + 1,
+            b'U' => direction_count + 1,
             _ => 1,
         };
 
         result.push(Element {
-            x,
-            y: y - 1,
-            direction: Direction::Up,
+            location: location + UP,
+            direction: b'U',
             direction_count,
         });
     }
 
-    if y < grid.len_y - 1
-        && direction != Direction::Up
-        && !(direction_count < 4 && direction != Direction::Down)
-        && !(direction_count >= 10 && direction == Direction::Down)
+    if location.y < grid.len_y() - 1
+        && direction != b'U'
+        && !(direction_count < 4 && direction != b'D')
+        && !(direction_count >= 10 && direction == b'D')
     {
         let direction_count = match direction {
-            Direction::Down => direction_count + 1,
+            b'D' => direction_count + 1,
             _ => 1,
         };
 
         result.push(Element {
-            x,
-            y: y + 1,
-            direction: Direction::Down,
+            location: location + DOWN,
+            direction: b'D',
             direction_count,
         });
     }
@@ -205,27 +175,25 @@ fn get_neighbors_part_2(grid: &Grid, element: &Element) -> Vec<Element> {
     result
 }
 
-fn find_path_cost<F>(grid: &Grid, get_neighbors: F) -> u32
+fn find_path_cost<F>(grid: &Array2D<u8>, get_neighbors: F) -> u32
 where
-    F: Fn(&Grid, &Element) -> Vec<Element>,
+    F: Fn(&Array2D<u8>, Element) -> Vec<Element>,
 {
     let root_element_right = Element {
-        x: 0,
-        y: 0,
-        direction: Direction::Right,
+        location: Point::new(0, 0),
+        direction: b'R',
         direction_count: 0,
     };
 
     let root_element_down = Element {
-        x: 0,
-        y: 0,
-        direction: Direction::Down,
+        location: Point::new(0, 0),
+        direction: b'D',
         direction_count: 0,
     };
 
     #[inline]
-    fn is_goal(grid: &Grid, element: &Element) -> bool {
-        element.x == grid.len_x - 1 && element.y == grid.len_y - 1
+    fn is_goal(grid: &Array2D<u8>, element: &Element) -> bool {
+        element.location.x == grid.len_x() - 1 && element.location.y == grid.len_y() - 1
     }
 
     let mut visited = FastSet::new();
@@ -239,24 +207,24 @@ where
     queue.push(0, root_element_down);
 
     while let Some(queue_element) = queue.pop() {
-        let element = &queue_element.1;
+        let element = queue_element.1;
 
-        if is_goal(grid, element) {
+        if is_goal(grid, &element) {
             return queue_element.0;
         }
 
-        if visited.contains(element) {
+        if visited.contains(&element) {
             continue;
         }
 
-        visited.insert(*element);
+        visited.insert(element);
 
         for new_element in get_neighbors(grid, element) {
-            let dist_element = dist.get(element).unwrap();
-            let dist_new_element = dist.get(&new_element).unwrap_or(&u32::MAX);
+            let dist_element = dist.get(&element).unwrap();
+            let dist_new_element = dist.get(&new_element).copied().unwrap_or(u32::MAX);
 
-            let dist_to_new_element = dist_element + grid.data[(new_element.x, new_element.y)];
-            if dist_to_new_element < *dist_new_element {
+            let dist_to_new_element = dist_element + grid[&new_element.location] as u32;
+            if dist_to_new_element < dist_new_element {
                 dist.insert(new_element, dist_to_new_element);
                 queue.push(dist_to_new_element, new_element);
             }

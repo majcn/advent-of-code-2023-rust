@@ -1,6 +1,8 @@
 advent_of_code::solution!(19);
 
 use advent_of_code::maneatingape::hash::*;
+use advent_of_code::maneatingape::iter::*;
+use advent_of_code::maneatingape::parse::*;
 
 #[derive(Clone, Copy)]
 enum ConditionExpression {
@@ -79,7 +81,7 @@ fn create_node(data: &FastMap<&str, &str>, name: &str) -> TreeNode {
     }
 }
 
-fn parse_data(input: &str) -> (TreeNode, Vec<Vec<u32>>) {
+fn parse_data(input: &str) -> (TreeNode, Vec<[u32; 4]>) {
     let (workflows_str, ratings_str) = input.split_once("\n\n").unwrap();
     let workflows = workflows_str
         .lines()
@@ -90,13 +92,8 @@ fn parse_data(input: &str) -> (TreeNode, Vec<Vec<u32>>) {
     let root = create_node(&workflows, "in");
 
     let ratings = ratings_str
-        .lines()
-        .map(|line| &line[1..line.len() - 1])
-        .map(|line| {
-            line.splitn(4, ',')
-                .map(|x| x[2..].parse().unwrap())
-                .collect::<Vec<_>>()
-        })
+        .iter_unsigned::<u32>()
+        .chunk::<4>()
         .collect::<Vec<_>>();
 
     (root, ratings)

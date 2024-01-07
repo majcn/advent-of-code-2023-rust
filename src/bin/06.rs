@@ -1,5 +1,7 @@
 advent_of_code::solution!(6);
 
+use advent_of_code::maneatingape::parse::*;
+
 struct Race {
     time: u64,
     distance: u64,
@@ -8,15 +10,8 @@ struct Race {
 fn parse_data(input: &str) -> Vec<Race> {
     let (time, distance) = input.split_once('\n').unwrap();
 
-    let time = time[5..]
-        .split_ascii_whitespace()
-        .map(|x| x.parse().unwrap());
-
-    let distance = distance[9..]
-        .split_ascii_whitespace()
-        .map(|x| x.parse().unwrap());
-
-    time.zip(distance)
+    time.iter_unsigned()
+        .zip(distance.iter_unsigned())
         .map(|(time, distance)| Race { time, distance })
         .collect()
 }
@@ -57,15 +52,15 @@ pub fn part_two(input: &str) -> Option<u64> {
         .iter()
         .map(|race| race.time)
         .fold(String::new(), |acc, x| acc + &x.to_string())
-        .parse()
-        .unwrap();
+        .as_str()
+        .unsigned();
 
     let distance = races
         .iter()
         .map(|race| race.distance)
         .fold(String::new(), |acc, x| acc + &x.to_string())
-        .parse()
-        .unwrap();
+        .as_str()
+        .unsigned();
 
     let race = Race { time, distance };
 

@@ -1,34 +1,12 @@
 advent_of_code::solution!(21);
 
+use advent_of_code::maneatingape::point::*;
+
 use advent_of_code::util::bignumbers::U1024;
+use advent_of_code::util::list::Array2D;
 
-use advent_of_code::maneatingape::hash::*;
-
-struct Data {
-    rock_locations: FastSet<(usize, usize)>,
-    len_x: usize,
-    len_y: usize,
-}
-
-fn parse_data(input: &str) -> Data {
-    let len_x = input.lines().next().unwrap().len();
-    let len_y = input.lines().count();
-
-    let mut rock_locations = FastSet::new();
-
-    for (y, line) in input.lines().enumerate() {
-        for (x, v) in line.chars().enumerate() {
-            if v == '#' {
-                rock_locations.insert((x, y));
-            }
-        }
-    }
-
-    Data {
-        rock_locations,
-        len_x,
-        len_y,
-    }
+fn parse_data(input: &str) -> Array2D<u8> {
+    Array2D::new(input)
 }
 
 fn run_step(my_positions_bits: &[U1024], rocks_bits: &[U1024]) -> Vec<U1024> {
@@ -77,30 +55,24 @@ fn part_x<const N: usize>(
 }
 
 pub fn part_one(input: &str) -> Option<u64> {
-    let Data {
-        rock_locations,
-        len_x,
-        len_y,
-    } = parse_data(input);
+    let grid = parse_data(input);
+    let len_x = grid.len_x() as usize;
+    let len_y = grid.len_y() as usize;
 
     // convert to bits and add borders
-    let mut rocks_bits = vec![!U1024::ZERO];
-    for y in 0..len_y {
-        let mut rocks_bits_line = U1024::ZERO;
-        for x in 0..len_x {
-            if rock_locations.contains(&(x, y)) {
-                rocks_bits_line |= U1024::ONE << (x + 1)
+    let mut rocks_bits = vec![U1024::ZERO; len_y + 2];
+    *rocks_bits.first_mut().unwrap() = !U1024::ZERO;
+    *rocks_bits.last_mut().unwrap() = !U1024::ZERO;
+    for y in 0..grid.len_y() {
+        for x in 0..grid.len_x() {
+            if grid[&Point::new(x, y)] == b'#' {
+                rocks_bits[y as usize + 1] |= U1024::ONE << (x as usize + 1)
             }
-            rocks_bits_line |= U1024::ONE;
-            rocks_bits_line |= U1024::ONE << (len_x + 1)
+            rocks_bits[y as usize + 1] |= U1024::ONE;
+            rocks_bits[y as usize + 1] |= U1024::ONE << (len_x + 1)
         }
-        rocks_bits.push(rocks_bits_line);
     }
-    rocks_bits.push(!U1024::ZERO);
-
-    let mut my_positions_bits = (0..rocks_bits.len())
-        .map(|_| U1024::ZERO)
-        .collect::<Vec<_>>();
+    let mut my_positions_bits = vec![U1024::ZERO; rocks_bits.len()];
     my_positions_bits[(len_y + 2) / 2] |= U1024::ONE << ((len_x + 2) / 2);
 
     let result = part_x([64], my_positions_bits, rocks_bits)
@@ -113,22 +85,18 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    let Data {
-        rock_locations,
-        len_x,
-        len_y,
-    } = parse_data(input);
+    let grid = parse_data(input);
+    let len_x = grid.len_x() as usize;
+    let len_y = grid.len_y() as usize;
 
     // convert to bits and expand GRID_MULTIPLIER times
-    let mut rocks_bits = vec![];
-    for y in 0..len_y {
-        let mut rocks_bits_line = U1024::ZERO;
-        for x in 0..len_x {
-            if rock_locations.contains(&(x, y)) {
-                rocks_bits_line |= U1024::ONE << x
+    let mut rocks_bits = vec![U1024::ZERO; len_y];
+    for y in 0..grid.len_y() {
+        for x in 0..grid.len_x() {
+            if grid[&Point::new(x, y)] == b'#' {
+                rocks_bits[y as usize] |= U1024::ONE << x as usize
             }
         }
-        rocks_bits.push(rocks_bits_line);
     }
 
     const GRID_MULTIPLIER: usize = 7;

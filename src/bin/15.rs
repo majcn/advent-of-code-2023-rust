@@ -1,5 +1,7 @@
 advent_of_code::solution!(15);
 
+use advent_of_code::maneatingape::parse::*;
+
 fn parse_data(input: &str) -> Vec<&str> {
     input.split(',').collect()
 }
@@ -45,7 +47,7 @@ pub fn part_two(input: &str) -> Option<u32> {
                 Holder::new(label, Operation::Remove)
             } else {
                 let (label, value) = x.split_once('=').unwrap();
-                Holder::new(label, Operation::Set(value.parse().unwrap()))
+                Holder::new(label, Operation::Set(value.unsigned()))
             }
         })
         .collect::<Vec<_>>();

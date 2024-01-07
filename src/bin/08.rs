@@ -1,6 +1,7 @@
 advent_of_code::solution!(8);
 
 use advent_of_code::maneatingape::hash::*;
+use advent_of_code::maneatingape::math::*;
 
 type MyLocation = [char; 3];
 
@@ -65,19 +66,6 @@ pub fn part_one(input: &str) -> Option<u64> {
     Some(result)
 }
 
-fn gcd(a: u64, b: u64) -> u64 {
-    let mut a = a;
-    let mut b = b;
-    while b != 0 {
-        (a, b) = (b, a % b);
-    }
-    a
-}
-
-fn lcm(a: u64, b: u64) -> u64 {
-    (a * b) / gcd(a, b)
-}
-
 pub fn part_two(input: &str) -> Option<u64> {
     let state = parse_data(input);
 
@@ -90,7 +78,7 @@ pub fn part_two(input: &str) -> Option<u64> {
     let result = locations
         .into_iter()
         .map(|loc| part_x(&state, loc, |loc| loc[2] == 'Z'))
-        .fold(1, lcm);
+        .fold(1, IntegerMathOps::lcm);
 
     Some(result)
 }

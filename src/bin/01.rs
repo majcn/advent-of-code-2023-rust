@@ -21,9 +21,8 @@ fn part_x(data: Vec<&str>, digit_map: FastMap<&str, u8>) -> u32 {
             }
         }
 
-        let mut tmp_result_iter = tmp_result.into_iter();
-        let first = *tmp_result_iter.next().unwrap();
-        let last = *tmp_result_iter.next_back().unwrap_or(&first);
+        let first = **tmp_result.first().unwrap();
+        let last = **tmp_result.last().unwrap();
         result += first as u32 * 10 + last as u32;
     }
 

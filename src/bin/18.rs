@@ -1,14 +1,11 @@
 advent_of_code::solution!(18);
 
-enum Direction {
-    Left,
-    Right,
-    Up,
-    Down,
-}
+use advent_of_code::maneatingape::point::*;
+
+type Direction = u8;
 
 struct Dig {
-    n: u32,
+    n: i32,
     direction: Direction,
     color: u32,
 }
@@ -19,13 +16,7 @@ fn parse_data(input: &str) -> Vec<Dig> {
         .map(|line| {
             let mut fields = line.split_ascii_whitespace();
 
-            let direction = match fields.next().unwrap().as_bytes()[0] {
-                b'L' => Direction::Left,
-                b'R' => Direction::Right,
-                b'U' => Direction::Up,
-                b'D' => Direction::Down,
-                _ => unreachable!(),
-            };
+            let direction = fields.next().unwrap().as_bytes()[0];
 
             let n = fields.next().unwrap().parse().unwrap();
 
@@ -42,23 +33,14 @@ fn parse_data(input: &str) -> Vec<Dig> {
 
 fn part_x<D, L>(data: &[Dig], get_direction: D, get_length: L) -> u64
 where
-    D: Fn(&Dig) -> &Direction,
-    L: Fn(&Dig) -> i64,
+    D: Fn(&Dig) -> Direction,
+    L: Fn(&Dig) -> i32,
 {
     let mut trench = 0;
-    let mut polygon = vec![(0, 0)];
+    let mut polygon = vec![Point::new(0, 0)];
     for dig in data {
-        let x = polygon[polygon.len() - 1].0;
-        let y = polygon[polygon.len() - 1].1;
-
         let n = get_length(dig);
-        let next_location = match get_direction(dig) {
-            Direction::Left => (x - n, y),
-            Direction::Right => (x + n, y),
-            Direction::Up => (x, y - n),
-            Direction::Down => (x, y + n),
-        };
-
+        let next_location = polygon[polygon.len() - 1] + Point::from(get_direction(dig)) * n;
         trench += n as u64;
         polygon.push(next_location);
     }
@@ -66,7 +48,7 @@ where
     // Shoelace formula
     let area_twice = polygon
         .windows(2)
-        .map(|w| (w[0].1 + w[1].1) * (w[0].0 - w[1].0))
+        .map(|w| (w[0].y + w[1].y) as i64 * (w[0].x - w[1].x) as i64)
         .sum::<i64>()
         .unsigned_abs();
 
@@ -80,7 +62,7 @@ where
 pub fn part_one(input: &str) -> Option<u64> {
     let data = parse_data(input);
 
-    let result = part_x(&data, |dig| &dig.direction, |dig| dig.n as i64);
+    let result = part_x(&data, |dig| dig.direction, |dig| dig.n);
 
     Some(result)
 }
@@ -91,13 +73,13 @@ pub fn part_two(input: &str) -> Option<u64> {
     let result = part_x(
         &data,
         |dig| match dig.color & 0xF {
-            2 => &Direction::Left,
-            0 => &Direction::Right,
-            3 => &Direction::Up,
-            1 => &Direction::Down,
+            0 => b'R',
+            1 => b'D',
+            2 => b'L',
+            3 => b'U',
             _ => unreachable!(),
         },
-        |dig| (dig.color >> 4) as i64,
+        |dig| (dig.color >> 4) as i32,
     );
 
     Some(result)

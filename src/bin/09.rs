@@ -1,13 +1,11 @@
 advent_of_code::solution!(9);
 
+use advent_of_code::maneatingape::parse::*;
+
 fn parse_data(input: &str) -> Vec<Vec<i64>> {
     input
         .lines()
-        .map(|line| {
-            line.split_ascii_whitespace()
-                .map(|x| x.parse().unwrap())
-                .collect()
-        })
+        .map(|line| line.iter_signed().collect())
         .collect()
 }
 
@@ -36,7 +34,7 @@ pub fn part_one(input: &str) -> Option<i64> {
     let result = data
         .into_iter()
         .flat_map(part_x)
-        .map(|x| x.into_iter().next_back().unwrap())
+        .map(|mut x| x.pop().unwrap())
         .sum();
 
     Some(result)

@@ -1,5 +1,8 @@
 advent_of_code::solution!(5);
 
+use advent_of_code::maneatingape::iter::*;
+use advent_of_code::maneatingape::parse::*;
+
 type Seed = u64;
 
 #[derive(Clone, Copy)]
@@ -36,29 +39,21 @@ impl MapPart {
 fn parse_data(input: &str) -> (Vec<Seed>, Vec<Vec<MapPart>>) {
     let mut parts = input.split("\n\n");
 
-    let seeds = parts.next().unwrap()[7..]
-        .split_ascii_whitespace()
-        .map(|x| x.parse().unwrap())
+    let seeds = parts.next().unwrap().iter_unsigned().collect();
+
+    let maps = parts
+        .map(|part| {
+            part.iter_unsigned()
+                .chunk::<3>()
+                .map(|[min_target, min_source, n]| MapPart {
+                    min_source,
+                    max_source: min_source + n - 1,
+                    min_target,
+                    max_target: min_source + n - 1,
+                })
+                .collect()
+        })
         .collect();
-
-    let mut maps = vec![];
-    for part in parts {
-        let mut part_result = vec![];
-        for line in part.lines().skip(1) {
-            let tmp = line
-                .split_ascii_whitespace()
-                .map(|x| x.parse().unwrap())
-                .collect::<Vec<_>>();
-
-            part_result.push(MapPart {
-                min_source: tmp[1],
-                max_source: tmp[1] + tmp[2] - 1,
-                min_target: tmp[0],
-                max_target: tmp[0] + tmp[2] - 1,
-            });
-        }
-        maps.push(part_result);
-    }
 
     (seeds, maps)
 }

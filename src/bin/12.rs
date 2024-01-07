@@ -1,6 +1,7 @@
 advent_of_code::solution!(12);
 
 use advent_of_code::maneatingape::hash::*;
+use advent_of_code::maneatingape::parse::*;
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 enum Spring {
@@ -31,7 +32,7 @@ fn parse_data(input: &str) -> Vec<State> {
                 })
                 .collect();
 
-            let instructions = right.split(',').map(|x| x.parse().unwrap()).collect();
+            let instructions = right.iter_unsigned().collect();
 
             State { data, instructions }
         })

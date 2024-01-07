@@ -1,5 +1,7 @@
 advent_of_code::solution!(2);
 
+use advent_of_code::maneatingape::parse::*;
+
 struct Game {
     id: u32,
     sets: Vec<Set>,
@@ -19,9 +21,9 @@ impl From<&str> for Set {
         item.split(", ")
             .filter_map(|x| x.split_once(' '))
             .for_each(|(n, color)| match color {
-                "red" => result.red = n.parse().unwrap(),
-                "green" => result.green = n.parse().unwrap(),
-                "blue" => result.blue = n.parse().unwrap(),
+                "red" => result.red = n.unsigned(),
+                "green" => result.green = n.unsigned(),
+                "blue" => result.blue = n.unsigned(),
                 _ => unreachable!(),
             });
 
@@ -33,7 +35,7 @@ impl From<&str> for Game {
     fn from(item: &str) -> Self {
         let (game_id, game_data) = item.split_once(": ").unwrap();
 
-        let id = game_id[5..].parse().unwrap();
+        let id = game_id.unsigned();
         let sets = game_data.split("; ").map(Set::from).collect();
 
         Game { id, sets }

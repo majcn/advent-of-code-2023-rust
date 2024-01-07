@@ -1,76 +1,61 @@
 advent_of_code::solution!(10);
 
+use advent_of_code::maneatingape::point::*;
+
 use advent_of_code::util::list::Array2D;
 
-enum Direction {
-    Left,
-    Right,
-    Up,
-    Down,
-}
-
-struct Grid {
-    data: Array2D<Vec<Direction>>,
-    len_x: usize,
-    len_y: usize,
-}
+type Direction = u8;
 
 struct State {
-    grid: Grid,
-    start_position: (usize, usize),
+    grid: Array2D<Vec<Direction>>,
+    start_position: Point,
 }
 
 fn parse_data(input: &str) -> State {
     let len_x = input.lines().next().unwrap().len();
-    let len_y = input.lines().count();
 
     let start_position = input
         .lines()
         .enumerate()
-        .filter_map(|(y, line)| line.chars().position(|v| v == 'S').map(|x| (x, y)))
+        .filter_map(|(y, line)| {
+            line.chars()
+                .position(|v| v == 'S')
+                .map(|x| Point::new(x as i32, y as i32))
+        })
         .next()
         .unwrap();
 
-    let mut grid = Array2D::new(len_x);
+    let mut grid = Array2D::default(len_x);
 
     input
         .lines()
         .map(|line| {
             line.as_bytes().iter().map(|v| match v {
-                b'|' => vec![Direction::Down, Direction::Up],
-                b'-' => vec![Direction::Left, Direction::Right],
-                b'L' => vec![Direction::Up, Direction::Right],
-                b'J' => vec![Direction::Left, Direction::Up],
-                b'7' => vec![Direction::Left, Direction::Down],
-                b'F' => vec![Direction::Right, Direction::Down],
+                b'|' => vec![b'D', b'U'],
+                b'-' => vec![b'L', b'R'],
+                b'L' => vec![b'U', b'R'],
+                b'J' => vec![b'L', b'U'],
+                b'7' => vec![b'L', b'D'],
+                b'F' => vec![b'R', b'D'],
                 _ => vec![],
             })
         })
         .for_each(|line| grid.add_line(line));
 
     State {
-        grid: Grid {
-            data: grid,
-            len_x,
-            len_y,
-        },
+        grid,
         start_position,
     }
 }
 
 fn get_next_position(
-    grid: &Grid,
-    position: &(usize, usize),
-    direction: &Direction,
-) -> Option<(usize, usize)> {
-    let result = match direction {
-        Direction::Left => (position.0.wrapping_sub(1), position.1),
-        Direction::Right => (position.0 + 1, position.1),
-        Direction::Up => (position.0, position.1.wrapping_sub(1)),
-        Direction::Down => (position.0, position.1 + 1),
-    };
+    grid: &Array2D<Vec<Direction>>,
+    position: Point,
+    direction: Direction,
+) -> Option<Point> {
+    let result = position + Point::from(direction);
 
-    if (0..grid.len_x).contains(&result.0) && (0..grid.len_y).contains(&result.1) {
+    if grid.contains(&result) {
         Some(result)
     } else {
         None
@@ -78,13 +63,13 @@ fn get_next_position(
 }
 
 fn part_x(
-    grid: &Grid,
-    start_position: (usize, usize),
+    grid: &Array2D<Vec<Direction>>,
+    start_position: Point,
     start_direction: Direction,
-) -> Option<Vec<(usize, usize)>> {
+) -> Option<Vec<Point>> {
     let mut result = vec![start_position];
 
-    if let Some(new_position) = get_next_position(grid, &start_position, &start_direction) {
+    if let Some(new_position) = get_next_position(grid, start_position, start_direction) {
         result.push(new_position);
     } else {
         return None;
@@ -92,11 +77,11 @@ fn part_x(
 
     loop {
         let prev_position = &result[result.len() - 2];
-        let position = &result[result.len() - 1];
+        let position = result[result.len() - 1];
 
-        let new_possible_position = grid.data[position]
+        let new_possible_position = grid[&position]
             .iter()
-            .filter_map(|d| get_next_position(grid, position, d))
+            .filter_map(|d| get_next_position(grid, position, *d))
             .find(|next_position| next_position != prev_position);
 
         if let Some(new_position) = new_possible_position {
@@ -111,12 +96,7 @@ fn part_x(
     }
 }
 
-const STARTING_DIRECTIONS: [Direction; 4] = [
-    Direction::Left,
-    Direction::Right,
-    Direction::Up,
-    Direction::Down,
-];
+const STARTING_DIRECTIONS: [Direction; 4] = [b'L', b'R', b'U', b'D'];
 
 pub fn part_one(input: &str) -> Option<u32> {
     let state = parse_data(input);
@@ -144,7 +124,7 @@ pub fn part_two(input: &str) -> Option<u32> {
     // Shoelace formula
     let area_twice = best_path
         .windows(2)
-        .map(|w| (w[0].1 as i32 + w[1].1 as i32) * (w[0].0 as i32 - w[1].0 as i32))
+        .map(|w| (w[0].y + w[1].y) * (w[0].x - w[1].x))
         .sum::<i32>()
         .unsigned_abs();
 

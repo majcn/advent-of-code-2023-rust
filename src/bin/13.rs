@@ -1,26 +1,22 @@
 advent_of_code::solution!(13);
 
+use advent_of_code::maneatingape::point::*;
+
 use advent_of_code::util::list::Array2D;
 
-fn parse_data(input: &str) -> Vec<Array2D<char>> {
-    input
-        .split("\n\n")
-        .map(|mirror| {
-            let line_len = mirror.lines().next().unwrap().len();
-            let mut data = Array2D::new(line_len);
-            mirror.lines().for_each(|line| data.add_line(line.chars()));
-            data
-        })
-        .collect()
+fn parse_data(input: &str) -> Vec<Array2D<u8>> {
+    input.split("\n\n").map(Array2D::new).collect()
 }
 
-fn is_valid_x<const N_P: usize>(mirror: &Array2D<char>, split_point_x: usize) -> bool {
+fn is_valid_x<const N_P: usize>(mirror: &Array2D<u8>, split_point_x: i32) -> bool {
     let mut problems = 0;
 
-    for y in 0..mirror.len() {
+    for y in 0..mirror.len_y() {
         let mut i = 0;
-        while split_point_x >= i && split_point_x + i + 1 < mirror.len_line() {
-            if mirror[(split_point_x - i, y)] != mirror[(split_point_x + i + 1, y)] {
+        while split_point_x >= i && split_point_x + i + 1 < mirror.len_x() {
+            if mirror[&Point::new(split_point_x - i, y)]
+                != mirror[&Point::new(split_point_x + i + 1, y)]
+            {
                 if problems == N_P {
                     return false;
                 }
@@ -34,17 +30,19 @@ fn is_valid_x<const N_P: usize>(mirror: &Array2D<char>, split_point_x: usize) ->
     problems == N_P
 }
 
-fn find_valid_x<const N_P: usize>(mirror: &Array2D<char>) -> Option<usize> {
-    (0..mirror.len_line() - 1).find(|&x| is_valid_x::<N_P>(mirror, x))
+fn find_valid_x<const N_P: usize>(mirror: &Array2D<u8>) -> Option<i32> {
+    (0..mirror.len_x() - 1).find(|&x| is_valid_x::<N_P>(mirror, x))
 }
 
-fn is_valid_y<const N_P: usize>(mirror: &Array2D<char>, split_point_y: usize) -> bool {
+fn is_valid_y<const N_P: usize>(mirror: &Array2D<u8>, split_point_y: i32) -> bool {
     let mut problems = 0;
 
-    for x in 0..mirror.len_line() {
+    for x in 0..mirror.len_x() {
         let mut i = 0;
-        while split_point_y >= i && split_point_y + i + 1 < mirror.len() {
-            if mirror[(x, split_point_y - i)] != mirror[(x, split_point_y + i + 1)] {
+        while split_point_y >= i && split_point_y + i + 1 < mirror.len_y() {
+            if mirror[&Point::new(x, split_point_y - i)]
+                != mirror[&Point::new(x, split_point_y + i + 1)]
+            {
                 if problems == N_P {
                     return false;
                 }
@@ -58,11 +56,11 @@ fn is_valid_y<const N_P: usize>(mirror: &Array2D<char>, split_point_y: usize) ->
     problems == N_P
 }
 
-fn find_valid_y<const N_P: usize>(mirror: &Array2D<char>) -> Option<usize> {
-    (0..mirror.len() - 1).find(|&y| is_valid_y::<N_P>(mirror, y))
+fn find_valid_y<const N_P: usize>(mirror: &Array2D<u8>) -> Option<i32> {
+    (0..mirror.len_y() - 1).find(|&y| is_valid_y::<N_P>(mirror, y))
 }
 
-fn part_x<const N_P: usize>(data: &[Array2D<char>]) -> u32 {
+fn part_x<const N_P: usize>(data: &[Array2D<u8>]) -> u32 {
     data.iter()
         .map(|mirror| {
             let valid_x = find_valid_x::<N_P>(mirror);

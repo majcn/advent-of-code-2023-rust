@@ -1,6 +1,7 @@
 advent_of_code::solution!(20);
 
 use advent_of_code::maneatingape::hash::*;
+use advent_of_code::maneatingape::math::*;
 
 use std::collections::VecDeque;
 
@@ -121,23 +122,8 @@ fn parse_data(input: &str) -> (Vec<Module>, usize) {
 
         ids.insert(module_name, i);
         for output in right_str.split(", ") {
-            match inputs.entry(output) {
-                std::collections::hash_map::Entry::Occupied(mut o) => {
-                    o.get_mut().push(module_name);
-                }
-                std::collections::hash_map::Entry::Vacant(v) => {
-                    v.insert(vec![module_name]);
-                }
-            };
-
-            match outputs.entry(module_name) {
-                std::collections::hash_map::Entry::Occupied(mut o) => {
-                    o.get_mut().push(output);
-                }
-                std::collections::hash_map::Entry::Vacant(v) => {
-                    v.insert(vec![output]);
-                }
-            };
+            inputs.entry(output).or_default().push(module_name);
+            outputs.entry(module_name).or_default().push(output);
         }
     }
 
@@ -222,19 +208,6 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(result)
 }
 
-fn gcd(a: u64, b: u64) -> u64 {
-    let mut a = a;
-    let mut b = b;
-    while b != 0 {
-        (a, b) = (b, a % b);
-    }
-    a
-}
-
-fn lcm(a: u64, b: u64) -> u64 {
-    (a * b) / gcd(a, b)
-}
-
 pub fn part_two(input: &str) -> Option<u64> {
     let (mut modules, broadcaster) = parse_data(input);
 
@@ -268,7 +241,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         i += 1;
     }
 
-    let result = results.into_iter().reduce(lcm).unwrap();
+    let result = results.into_iter().fold(1, IntegerMathOps::lcm);
 
     Some(result)
 }

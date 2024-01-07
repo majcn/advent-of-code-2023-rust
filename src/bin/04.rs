@@ -1,5 +1,7 @@
 advent_of_code::solution!(4);
 
+use advent_of_code::maneatingape::parse::*;
+
 struct Card {
     my_numbers: Vec<u32>,
     winning_numbers: Vec<u32>,
@@ -9,18 +11,9 @@ fn parse_data(input: &str) -> Vec<Card> {
     input
         .lines()
         .map(|line| {
-            let (_, line) = line.split_once(':').unwrap();
-            let (winning_numbers, my_numbers) = line.split_once('|').unwrap();
-
-            let winning_numbers = winning_numbers
-                .split_ascii_whitespace()
-                .map(|x| x.parse().unwrap())
-                .collect();
-
-            let my_numbers = my_numbers
-                .split_ascii_whitespace()
-                .map(|x| x.parse().unwrap())
-                .collect();
+            let (winning_numbers_str, my_numbers_str) = line.split_once('|').unwrap();
+            let winning_numbers = winning_numbers_str.iter_unsigned().skip(1).collect();
+            let my_numbers = my_numbers_str.iter_unsigned().collect();
 
             Card {
                 my_numbers,
