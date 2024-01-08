@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct UX64<const N: usize>([u64; N]);
 
 impl<const N: usize> UX64<N> {
