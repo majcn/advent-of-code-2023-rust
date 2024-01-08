@@ -1,23 +1,22 @@
 advent_of_code::solution!(23);
 
+use advent_of_code::maneatingape::grid::*;
 use advent_of_code::maneatingape::hash::*;
 use advent_of_code::maneatingape::point::*;
 
-use advent_of_code::util::list::Array2D;
-
 type NodeId = usize;
 
-fn parse_data(input: &str) -> Array2D<u8> {
-    Array2D::new(input)
+fn parse_data(input: &str) -> Grid<u8> {
+    Grid::parse(input)
 }
 
 fn generate_graph<F>(
-    grid: &Array2D<u8>,
+    grid: &Grid<u8>,
     start_location: Point,
     get_neighbors: F,
 ) -> FastMap<(Point, Point), u32>
 where
-    F: Fn(&Array2D<u8>, &Point, Point) -> Vec<Point>,
+    F: Fn(&Grid<u8>, Point, Point) -> Vec<Point>,
 {
     let mut graph = FastMap::new();
 
@@ -28,7 +27,7 @@ where
         let mut cost = init_cost;
         let mut neighbors;
         loop {
-            neighbors = get_neighbors(grid, &prev_loc, loc);
+            neighbors = get_neighbors(grid, prev_loc, loc);
 
             if neighbors.len() != 1 {
                 break;
@@ -96,12 +95,12 @@ fn find_all_paths<F>(
     visited[node] = false;
 }
 
-fn part_x<F>(grid: &Array2D<u8>, get_neighbors: F) -> u32
+fn part_x<F>(grid: &Grid<u8>, get_neighbors: F) -> u32
 where
-    F: Fn(&Array2D<u8>, &Point, Point) -> Vec<Point>,
+    F: Fn(&Grid<u8>, Point, Point) -> Vec<Point>,
 {
     let start_location = Point::new(1, 0);
-    let end_location = Point::new(grid.len_x() - 2, grid.len_y() - 1);
+    let end_location = Point::new(grid.width - 2, grid.height - 1);
 
     let graph = generate_graph(grid, start_location, get_neighbors);
     let (graph, start, end) = simplify_graph(graph, &start_location, &end_location);
@@ -127,8 +126,8 @@ where
 pub fn part_one(input: &str) -> Option<u32> {
     let grid = parse_data(input);
 
-    fn get_neighbors(grid: &Array2D<u8>, prev_loc: &Point, loc: Point) -> Vec<Point> {
-        let options_iter = match grid[&loc] {
+    fn get_neighbors(grid: &Grid<u8>, prev_loc: Point, loc: Point) -> Vec<Point> {
+        let options_iter = match grid[loc] {
             b'.' => Vec::from(ORTHOGONAL.map(|x| loc + x)),
             b'^' => vec![loc + UP],
             b'v' => vec![loc + DOWN],
@@ -139,9 +138,9 @@ pub fn part_one(input: &str) -> Option<u32> {
 
         options_iter
             .into_iter()
-            .filter(|o| o != prev_loc)
-            .filter(|o| grid.contains(o))
-            .filter(|o| grid[o] != b'#')
+            .filter(|&o| o != prev_loc)
+            .filter(|&o| grid.contains(o))
+            .filter(|&o| grid[o] != b'#')
             .collect::<Vec<_>>()
     }
 
@@ -153,13 +152,13 @@ pub fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u32> {
     let grid = parse_data(input);
 
-    fn get_neighbors(grid: &Array2D<u8>, prev_loc: &Point, loc: Point) -> Vec<Point> {
+    fn get_neighbors(grid: &Grid<u8>, prev_loc: Point, loc: Point) -> Vec<Point> {
         ORTHOGONAL
             .into_iter()
             .map(|x| loc + x)
-            .filter(|o| o != prev_loc)
-            .filter(|o| grid.contains(o))
-            .filter(|o| grid[o] != b'#')
+            .filter(|&o| o != prev_loc)
+            .filter(|&o| grid.contains(o))
+            .filter(|&o| grid[o] != b'#')
             .collect::<Vec<_>>()
     }
 

@@ -1,5 +1,8 @@
 advent_of_code::solution!(24);
 
+use advent_of_code::maneatingape::iter::*;
+use advent_of_code::maneatingape::parse::*;
+
 struct Hailstone {
     x: i64,
     y: i64,
@@ -14,15 +17,8 @@ fn parse_data(input: &str) -> Vec<Hailstone> {
 
     for line in input.lines() {
         let (position_str, velocity_str) = line.split_once('@').unwrap();
-        let position = position_str
-            .split(',')
-            .map(|x| x.trim().parse().unwrap())
-            .collect::<Vec<_>>();
-
-        let velocity = velocity_str
-            .split(',')
-            .map(|x| x.trim().parse().unwrap())
-            .collect::<Vec<_>>();
+        let position = position_str.iter_signed().chunk::<3>().next().unwrap();
+        let velocity = velocity_str.iter_signed().chunk::<3>().next().unwrap();
 
         result.push(Hailstone {
             x: position[0],
@@ -126,7 +122,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         coefficients[i][3] = (h2.x - h1.x) as f64;
         rhs[i] = (h1.y * h1.vx - h1.x * h1.vy + h2.x * h2.vy - h2.y * h2.vx) as f64;
     }
-    let [rock_x, rock_vx, rock_y, _] =
+    let [rock_x, rock_vx, rock_y, ..] =
         gaussian_elimination(&mut coefficients, &mut rhs).map(|x| x.round() as i64);
 
     let mut coefficients = [[0f64; 2]; 2];
@@ -140,7 +136,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         coefficients[i][1] = t;
         rhs[i] = h1.z as f64 + t * h1.vz as f64;
     }
-    let [rock_z, _] = gaussian_elimination(&mut coefficients, &mut rhs).map(|x| x.round() as i64);
+    let [rock_z, ..] = gaussian_elimination(&mut coefficients, &mut rhs).map(|x| x.round() as i64);
 
     let result = rock_x + rock_y + rock_z;
     let result = result as u64;

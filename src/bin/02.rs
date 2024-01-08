@@ -20,10 +20,10 @@ impl From<&str> for Set {
 
         item.split(", ")
             .filter_map(|x| x.split_once(' '))
-            .for_each(|(n, color)| match color {
-                "red" => result.red = n.unsigned(),
-                "green" => result.green = n.unsigned(),
-                "blue" => result.blue = n.unsigned(),
+            .for_each(|(n, color)| match color.as_bytes()[0] {
+                b'r' => result.red = n.unsigned(),
+                b'g' => result.green = n.unsigned(),
+                b'b' => result.blue = n.unsigned(),
                 _ => unreachable!(),
             });
 

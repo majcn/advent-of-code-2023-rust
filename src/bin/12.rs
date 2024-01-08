@@ -3,15 +3,8 @@ advent_of_code::solution!(12);
 use advent_of_code::maneatingape::hash::*;
 use advent_of_code::maneatingape::parse::*;
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy)]
-enum Spring {
-    Operational,
-    Damaged,
-    Unknown,
-}
-
 struct State {
-    data: Vec<Spring>,
+    data: Vec<u8>,
     instructions: Vec<u32>,
 }
 
@@ -21,17 +14,7 @@ fn parse_data(input: &str) -> Vec<State> {
         .map(|line| {
             let (left, right) = line.split_once(' ').unwrap();
 
-            let data = left
-                .as_bytes()
-                .iter()
-                .map(|c| match c {
-                    b'.' => Spring::Operational,
-                    b'#' => Spring::Damaged,
-                    b'?' => Spring::Unknown,
-                    _ => unreachable!(),
-                })
-                .collect();
-
+            let data = left.bytes().collect();
             let instructions = right.iter_unsigned().collect();
 
             State { data, instructions }
@@ -41,17 +24,17 @@ fn parse_data(input: &str) -> Vec<State> {
 
 #[derive(Default)]
 struct MemoPartX<'a> {
-    cache: FastMap<(&'a [Spring], &'a [u32]), u64>,
+    cache: FastMap<(&'a [u8], &'a [u32]), u64>,
 }
 
 impl<'a> MemoPartX<'a> {
-    fn handle_next_operational(&mut self, data: &'a [Spring], instructions: &'a [u32]) -> u64 {
+    fn handle_next_operational(&mut self, data: &'a [u8], instructions: &'a [u32]) -> u64 {
         self.part_x(&data[1..], instructions)
     }
 
     fn handle_next_damaged(
         &mut self,
-        data: &'a [Spring],
+        data: &'a [u8],
         instructions: &'a [u32],
         group_size: usize,
     ) -> u64 {
@@ -60,7 +43,7 @@ impl<'a> MemoPartX<'a> {
         }
 
         let group_data = &data[..group_size];
-        if group_data.iter().any(|x| matches!(x, Spring::Operational)) {
+        if group_data.iter().any(|x| x == &b'.') {
             return 0;
         }
 
@@ -69,21 +52,20 @@ impl<'a> MemoPartX<'a> {
         }
 
         match data[group_size] {
-            Spring::Operational | Spring::Unknown => {
-                self.part_x(&data[(group_size + 1)..], &instructions[1..])
-            }
-            Spring::Damaged => 0,
+            b'.' | b'?' => self.part_x(&data[(group_size + 1)..], &instructions[1..]),
+            b'#' => 0,
+            _ => unreachable!(),
         }
     }
 
-    pub fn part_x(&mut self, data: &'a [Spring], instructions: &'a [u32]) -> u64 {
+    pub fn part_x(&mut self, data: &'a [u8], instructions: &'a [u32]) -> u64 {
         let cache_key = (data, instructions);
         if let Some(cached_value) = self.cache.get(&cache_key) {
             return *cached_value;
         }
 
         if instructions.is_empty() {
-            return if data.iter().any(|x| matches!(x, Spring::Damaged)) {
+            return if data.iter().any(|x| x == &b'#') {
                 0
             } else {
                 1
@@ -97,13 +79,14 @@ impl<'a> MemoPartX<'a> {
         let group_size = instructions[0] as usize;
 
         let result = match &data[0] {
-            Spring::Damaged => self.handle_next_damaged(data, instructions, group_size),
-            Spring::Operational => self.handle_next_operational(data, instructions),
-            Spring::Unknown => {
+            b'#' => self.handle_next_damaged(data, instructions, group_size),
+            b'.' => self.handle_next_operational(data, instructions),
+            b'?' => {
                 let damaged = self.handle_next_damaged(data, instructions, group_size);
                 let operational = self.handle_next_operational(data, instructions);
                 damaged + operational
             }
+            _ => unreachable!(),
         };
 
         self.cache.insert(cache_key, result);
@@ -132,7 +115,7 @@ pub fn part_two(input: &str) -> Option<u64> {
             state
                 .data
                 .iter()
-                .chain(std::iter::once(&Spring::Unknown))
+                .chain(std::iter::once(&b'?'))
                 .copied()
                 .cycle()
                 .take(state.data.len() * 5 + 4),

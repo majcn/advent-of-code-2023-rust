@@ -1,29 +1,30 @@
 advent_of_code::solution!(1);
 
-use advent_of_code::maneatingape::hash::*;
-
 fn parse_data(input: &str) -> Vec<&str> {
     input.lines().collect()
 }
 
-fn part_x(data: Vec<&str>, digit_map: FastMap<&str, u8>) -> u32 {
+fn part_x<F>(data: Vec<&str>, digit_map: F) -> u32
+where
+    F: Fn(&[u8]) -> Option<u32>,
+{
     let mut result = 0;
     for line in data.into_iter() {
-        let mut tmp_result = vec![];
+        let mut first = 0;
+        let mut last = 0;
 
         for i in 0..line.len() {
-            let digit = digit_map
-                .iter()
-                .find(|(key, _)| line[i..].starts_with(*key));
-
-            if let Some((_, value)) = digit {
-                tmp_result.push(value)
+            if let Some(digit) = digit_map(line[i..].as_bytes()) {
+                if first == 0 {
+                    first = digit;
+                    last = digit;
+                } else {
+                    last = digit;
+                }
             }
         }
 
-        let first = **tmp_result.first().unwrap();
-        let last = **tmp_result.last().unwrap();
-        result += first as u32 * 10 + last as u32;
+        result += first * 10 + last;
     }
 
     result
@@ -32,17 +33,18 @@ fn part_x(data: Vec<&str>, digit_map: FastMap<&str, u8>) -> u32 {
 pub fn part_one(input: &str) -> Option<u32> {
     let data = parse_data(input);
 
-    let digit_map = FastMap::build([
-        ("1", 1),
-        ("2", 2),
-        ("3", 3),
-        ("4", 4),
-        ("5", 5),
-        ("6", 6),
-        ("7", 7),
-        ("8", 8),
-        ("9", 9),
-    ]);
+    let digit_map = |s: &[u8]| match s[0] {
+        b'1' => Some(1),
+        b'2' => Some(2),
+        b'3' => Some(3),
+        b'4' => Some(4),
+        b'5' => Some(5),
+        b'6' => Some(6),
+        b'7' => Some(7),
+        b'8' => Some(8),
+        b'9' => Some(9),
+        _ => None,
+    };
 
     let result = part_x(data, digit_map);
 
@@ -52,26 +54,18 @@ pub fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u32> {
     let data = parse_data(input);
 
-    let digit_map = FastMap::build([
-        ("1", 1),
-        ("one", 1),
-        ("2", 2),
-        ("two", 2),
-        ("3", 3),
-        ("three", 3),
-        ("4", 4),
-        ("four", 4),
-        ("5", 5),
-        ("five", 5),
-        ("6", 6),
-        ("six", 6),
-        ("7", 7),
-        ("seven", 7),
-        ("8", 8),
-        ("eight", 8),
-        ("9", 9),
-        ("nine", 9),
-    ]);
+    let digit_map = |s: &[u8]| match s {
+        [b'1', ..] | [b'o', b'n', b'e', ..] => Some(1),
+        [b'2', ..] | [b't', b'w', b'o', ..] => Some(2),
+        [b'3', ..] | [b't', b'h', b'r', b'e', b'e', ..] => Some(3),
+        [b'4', ..] | [b'f', b'o', b'u', b'r', ..] => Some(4),
+        [b'5', ..] | [b'f', b'i', b'v', b'e', ..] => Some(5),
+        [b'6', ..] | [b's', b'i', b'x', ..] => Some(6),
+        [b'7', ..] | [b's', b'e', b'v', b'e', b'n', ..] => Some(7),
+        [b'8', ..] | [b'e', b'i', b'g', b'h', b't', ..] => Some(8),
+        [b'9', ..] | [b'n', b'i', b'n', b'e', ..] => Some(9),
+        _ => None,
+    };
 
     let result = part_x(data, digit_map);
 

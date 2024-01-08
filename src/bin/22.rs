@@ -139,9 +139,8 @@ pub fn part_two(input: &str) -> Option<u32> {
                 }
             }
 
-            destroyed
+            destroyed.len() as u32 - 1
         })
-        .map(|d| d.len() as u32 - 1)
         .sum();
 
     Some(result)

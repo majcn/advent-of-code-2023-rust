@@ -1,17 +1,16 @@
 advent_of_code::solution!(16);
 
+use advent_of_code::maneatingape::grid::*;
 use advent_of_code::maneatingape::hash::*;
 use advent_of_code::maneatingape::point::*;
 
-use advent_of_code::util::list::Array2D;
-
 type Direction = u8;
 
-fn parse_data(input: &str) -> Array2D<u8> {
-    Array2D::new(input)
+fn parse_data(input: &str) -> Grid<u8> {
+    Grid::parse(input)
 }
 
-fn next_directions(grid: &Array2D<u8>, location: &Point, direction: Direction) -> Vec<Direction> {
+fn next_directions(grid: &Grid<u8>, location: Point, direction: Direction) -> Vec<Direction> {
     match (grid[location], direction) {
         (b'\\', b'L') => vec![b'U'],
         (b'\\', b'R') => vec![b'D'],
@@ -33,20 +32,20 @@ fn next_directions(grid: &Array2D<u8>, location: &Point, direction: Direction) -
     }
 }
 
-fn next_position(grid: &Array2D<u8>, location: Point, direction: Direction) -> Option<Point> {
+fn next_position(grid: &Grid<u8>, location: Point, direction: Direction) -> Option<Point> {
     let result = location + Point::from(direction);
 
-    if grid.contains(&result) {
+    if grid.contains(result) {
         Some(result)
     } else {
         None
     }
 }
 
-fn follow_the_light(grid: &Array2D<u8>, start_location: Point, start_direction: Direction) -> u32 {
+fn follow_the_light(grid: &Grid<u8>, start_location: Point, start_direction: Direction) -> u32 {
     let mut cache = FastSet::new();
 
-    let mut queue = next_directions(grid, &start_location, start_direction)
+    let mut queue = next_directions(grid, start_location, start_direction)
         .into_iter()
         .map(|d| (start_location, d))
         .collect::<Vec<_>>();
@@ -60,7 +59,7 @@ fn follow_the_light(grid: &Array2D<u8>, start_location: Point, start_direction: 
         let (current_position, current_direction) = beam;
         if let Some(next_position) = next_position(grid, current_position, current_direction) {
             queue.extend(
-                next_directions(grid, &next_position, current_direction)
+                next_directions(grid, next_position, current_direction)
                     .into_iter()
                     .map(|d| (next_position, d)),
             )
@@ -81,10 +80,10 @@ pub fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u32> {
     let grid = parse_data(input);
 
-    let m1 = (0..grid.len_y()).map(|y| (0, y, b'R'));
-    let m2 = (0..grid.len_y()).map(|y| (grid.len_x() - 1, y, b'L'));
-    let m3 = (0..grid.len_x()).map(|x| (x, 0, b'D'));
-    let m4 = (0..grid.len_x()).map(|x| (x, grid.len_y() - 1, b'U'));
+    let m1 = (0..grid.height).map(|y| (0, y, b'R'));
+    let m2 = (0..grid.height).map(|y| (grid.width - 1, y, b'L'));
+    let m3 = (0..grid.width).map(|x| (x, 0, b'D'));
+    let m4 = (0..grid.width).map(|x| (x, grid.height - 1, b'U'));
 
     let result = m1
         .chain(m2)

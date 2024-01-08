@@ -49,7 +49,7 @@ fn parse_data(input: &str) -> (Vec<Seed>, Vec<Vec<MapPart>>) {
                     min_source,
                     max_source: min_source + n - 1,
                     min_target,
-                    max_target: min_source + n - 1,
+                    max_target: min_target + n - 1,
                 })
                 .collect()
         })

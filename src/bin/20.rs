@@ -26,11 +26,11 @@ impl Module {
         }
     }
 
-    fn has_output(&self, id: &usize) -> bool {
+    fn has_output(&self, id: usize) -> bool {
         match self {
-            Module::FlipFlop(m) => m.outputs.contains(id),
-            Module::Conjunction(m) => m.outputs.contains(id),
-            Module::Broadcast(m) => m.outputs.contains(id),
+            Module::FlipFlop(m) => m.outputs.contains(&id),
+            Module::Conjunction(m) => m.outputs.contains(&id),
+            Module::Broadcast(m) => m.outputs.contains(&id),
         }
     }
 
@@ -213,13 +213,13 @@ pub fn part_two(input: &str) -> Option<u64> {
 
     let module_with_special_output = modules
         .iter()
-        .find(|m| m.has_output(&SPECIAL_OUTPUT_ID))
+        .find(|m| m.has_output(SPECIAL_OUTPUT_ID))
         .map(|m| m.id())
         .unwrap();
 
     let targets = modules
         .iter()
-        .filter(|m| m.has_output(&module_with_special_output))
+        .filter(|m| m.has_output(module_with_special_output))
         .map(|m| m.id())
         .collect::<Vec<_>>();
 

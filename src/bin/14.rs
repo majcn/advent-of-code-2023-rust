@@ -1,142 +1,132 @@
 advent_of_code::solution!(14);
 
-use std::collections::BTreeSet;
-
+use advent_of_code::maneatingape::grid::*;
 use advent_of_code::maneatingape::hash::*;
-
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-struct Point {
-    x: usize,
-    y: usize,
-}
-
-type Rocks = FastSet<Point>;
+use advent_of_code::maneatingape::point::*;
 
 struct Platform {
-    rounded_rocks: Rocks,
-    cube_rocks: Rocks,
-    len_x: usize,
-    len_y: usize,
+    grid: Grid<u8>,
+    rounded_rocks: Vec<Point>,
 }
 
 fn parse_data(input: &str) -> Platform {
-    let mut rounded_rocks = Rocks::new();
-    let mut cube_rocks = Rocks::new();
+    let grid = Grid::parse(input);
 
-    let len_x = input.lines().next().unwrap().len();
-    let len_y = input.lines().count();
-
-    for (y, line) in input.lines().enumerate() {
-        for (x, v) in line.as_bytes().iter().enumerate() {
-            match v {
-                b'O' => {
-                    rounded_rocks.insert(Point { x, y });
-                }
-                b'#' => {
-                    cube_rocks.insert(Point { x, y });
-                }
-                _ => {}
+    let mut rounded_rocks = vec![];
+    for x in 0..grid.width {
+        for y in 0..grid.height {
+            if grid[Point::new(x, y)] == b'O' {
+                rounded_rocks.push(Point::new(x, y));
             }
         }
     }
 
     Platform {
+        grid,
         rounded_rocks,
-        cube_rocks,
-        len_x,
-        len_y,
     }
 }
 
 impl Platform {
-    fn move_north(&mut self) {
-        let mut new_rounded_rocks = Rocks::new();
+    fn update_state(&mut self, new_rounded_rocks: Vec<Point>) {
+        let mut new_rounded_rocks = new_rounded_rocks;
 
-        for x in 0..self.len_x {
+        std::mem::swap(&mut self.rounded_rocks, &mut new_rounded_rocks);
+        let old_rounded_rocks = new_rounded_rocks;
+
+        for old_rounded_rock in old_rounded_rocks {
+            self.grid[old_rounded_rock] = b'.';
+        }
+
+        for &new_rounded_rock in self.rounded_rocks.iter() {
+            self.grid[new_rounded_rock] = b'O';
+        }
+    }
+
+    fn move_north(&mut self) {
+        let mut new_rounded_rocks = vec![];
+
+        for x in 0..self.grid.width {
             let mut max_location = 0;
-            for y in 0..self.len_y {
-                if self.rounded_rocks.contains(&Point { x, y }) {
-                    new_rounded_rocks.insert(Point { x, y: max_location });
-                    max_location += 1;
-                } else if self.cube_rocks.contains(&Point { x, y }) {
-                    max_location = y + 1;
+            for y in 0..self.grid.height {
+                match self.grid[Point::new(x, y)] {
+                    b'O' => {
+                        new_rounded_rocks.push(Point::new(x, max_location));
+                        max_location += 1
+                    }
+                    b'#' => max_location = y + 1,
+                    _ => {}
                 }
             }
         }
 
-        self.rounded_rocks = new_rounded_rocks;
+        self.update_state(new_rounded_rocks);
     }
 
     fn move_west(&mut self) {
-        let mut new_rounded_rocks = Rocks::new();
+        let mut new_rounded_rocks = vec![];
 
-        for y in 0..self.len_y {
+        for y in 0..self.grid.height {
             let mut max_location = 0;
-            for x in 0..self.len_x {
-                if self.rounded_rocks.contains(&Point { x, y }) {
-                    new_rounded_rocks.insert(Point { x: max_location, y });
-                    max_location += 1;
-                } else if self.cube_rocks.contains(&Point { x, y }) {
-                    max_location = x + 1;
+            for x in 0..self.grid.width {
+                match self.grid[Point::new(x, y)] {
+                    b'O' => {
+                        new_rounded_rocks.push(Point::new(max_location, y));
+                        max_location += 1
+                    }
+                    b'#' => max_location = x + 1,
+                    _ => {}
                 }
             }
         }
 
-        self.rounded_rocks = new_rounded_rocks;
+        self.update_state(new_rounded_rocks);
     }
 
     fn move_south(&mut self) {
-        let mut new_rounded_rocks = Rocks::new();
+        let mut new_rounded_rocks = vec![];
 
-        for x in 0..self.len_x {
-            let mut max_location = self.len_y - 1;
-            for y in (0..self.len_y).rev() {
-                if self.rounded_rocks.contains(&Point { x, y }) {
-                    new_rounded_rocks.insert(Point { x, y: max_location });
-                    if y == 0 {
-                        break;
+        for x in 0..self.grid.width {
+            let mut max_location = self.grid.height - 1;
+            for y in (0..self.grid.height).rev() {
+                match self.grid[Point::new(x, y)] {
+                    b'O' => {
+                        new_rounded_rocks.push(Point::new(x, max_location));
+                        max_location -= 1
                     }
-                    max_location -= 1;
-                } else if self.cube_rocks.contains(&Point { x, y }) {
-                    if y == 0 {
-                        break;
-                    }
-                    max_location = y - 1;
+                    b'#' => max_location = y - 1,
+                    _ => {}
                 }
             }
         }
 
-        self.rounded_rocks = new_rounded_rocks;
+        self.update_state(new_rounded_rocks);
     }
 
     fn move_east(&mut self) {
-        let mut new_rounded_rocks = Rocks::new();
+        let mut new_rounded_rocks = vec![];
 
-        for y in 0..self.len_y {
-            let mut max_location = self.len_x - 1;
-            for x in (0..self.len_x).rev() {
-                if self.rounded_rocks.contains(&Point { x, y }) {
-                    new_rounded_rocks.insert(Point { x: max_location, y });
-                    if x == 0 {
-                        break;
+        for y in 0..self.grid.height {
+            let mut max_location = self.grid.width - 1;
+            for x in (0..self.grid.width).rev() {
+                match self.grid[Point::new(x, y)] {
+                    b'O' => {
+                        new_rounded_rocks.push(Point::new(max_location, y));
+                        max_location -= 1
                     }
-                    max_location -= 1;
-                } else if self.cube_rocks.contains(&Point { x, y }) {
-                    if x == 0 {
-                        break;
-                    }
-                    max_location = x - 1;
+                    b'#' => max_location = x - 1,
+                    _ => {}
                 }
             }
         }
 
-        self.rounded_rocks = new_rounded_rocks;
+        self.update_state(new_rounded_rocks);
     }
 
     fn calculate_score(&self) -> u32 {
-        let rev_score = self.rounded_rocks.iter().map(|rock| rock.y).sum::<usize>();
+        let rev_score = self.rounded_rocks.iter().map(|rock| rock.y).sum::<i32>();
 
-        (self.len_y * self.rounded_rocks.len() - rev_score) as u32
+        (self.grid.height * self.rounded_rocks.len() as i32 - rev_score) as u32
     }
 }
 
@@ -162,7 +152,7 @@ pub fn part_two(input: &str) -> Option<u32> {
         platform.move_south();
         platform.move_east();
 
-        match cache.entry(BTreeSet::from_iter(platform.rounded_rocks.iter().copied())) {
+        match cache.entry(platform.rounded_rocks.clone()) {
             std::collections::hash_map::Entry::Occupied(v) => {
                 let diff = i - v.get();
                 let multiplier = (MAX_CYCLES - i) / diff;

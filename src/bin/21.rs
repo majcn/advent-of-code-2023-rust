@@ -1,15 +1,15 @@
 advent_of_code::solution!(21);
 
+use advent_of_code::maneatingape::grid::*;
 use advent_of_code::maneatingape::point::*;
 
-use advent_of_code::util::bignumbers::U1024;
-use advent_of_code::util::list::Array2D;
+type UBig = advent_of_code::majcn::bignumbers::UX64<13>;
 
-fn parse_data(input: &str) -> Array2D<u8> {
-    Array2D::new(input)
+fn parse_data(input: &str) -> Grid<u8> {
+    Grid::parse(input)
 }
 
-fn run_step(my_positions_bits: &[U1024], rocks_bits: &[U1024]) -> Vec<U1024> {
+fn run_step(my_positions_bits: &[UBig], rocks_bits: &[UBig]) -> Vec<UBig> {
     let mut new_positions_bits = my_positions_bits.to_vec();
 
     for y in 1..my_positions_bits.len() - 1 {
@@ -28,8 +28,8 @@ fn run_step(my_positions_bits: &[U1024], rocks_bits: &[U1024]) -> Vec<U1024> {
 
 fn part_x<const N: usize>(
     snapshots: [usize; N],
-    my_positions_bits: Vec<U1024>,
-    rocks_bits: Vec<U1024>,
+    my_positions_bits: Vec<UBig>,
+    rocks_bits: Vec<UBig>,
 ) -> [(i64, i64); N] {
     let mut result = [(0, 0); N];
 
@@ -56,24 +56,24 @@ fn part_x<const N: usize>(
 
 pub fn part_one(input: &str) -> Option<u64> {
     let grid = parse_data(input);
-    let len_x = grid.len_x() as usize;
-    let len_y = grid.len_y() as usize;
+    let len_x = grid.width as usize;
+    let len_y = grid.height as usize;
 
     // convert to bits and add borders
-    let mut rocks_bits = vec![U1024::ZERO; len_y + 2];
-    *rocks_bits.first_mut().unwrap() = !U1024::ZERO;
-    *rocks_bits.last_mut().unwrap() = !U1024::ZERO;
-    for y in 0..grid.len_y() {
-        for x in 0..grid.len_x() {
-            if grid[&Point::new(x, y)] == b'#' {
-                rocks_bits[y as usize + 1] |= U1024::ONE << (x as usize + 1)
+    let mut rocks_bits = vec![UBig::ZERO; len_y + 2];
+    *rocks_bits.first_mut().unwrap() = !UBig::ZERO;
+    *rocks_bits.last_mut().unwrap() = !UBig::ZERO;
+    for y in 0..grid.height {
+        for x in 0..grid.width {
+            if grid[Point::new(x, y)] == b'#' {
+                rocks_bits[y as usize + 1] |= UBig::ONE << (x as usize + 1)
             }
-            rocks_bits[y as usize + 1] |= U1024::ONE;
-            rocks_bits[y as usize + 1] |= U1024::ONE << (len_x + 1)
+            rocks_bits[y as usize + 1] |= UBig::ONE;
+            rocks_bits[y as usize + 1] |= UBig::ONE << (len_x + 1)
         }
     }
-    let mut my_positions_bits = vec![U1024::ZERO; rocks_bits.len()];
-    my_positions_bits[(len_y + 2) / 2] |= U1024::ONE << ((len_x + 2) / 2);
+    let mut my_positions_bits = vec![UBig::ZERO; rocks_bits.len()];
+    my_positions_bits[(len_y + 2) / 2] |= UBig::ONE << ((len_x + 2) / 2);
 
     let result = part_x([64], my_positions_bits, rocks_bits)
         .into_iter()
@@ -86,15 +86,15 @@ pub fn part_one(input: &str) -> Option<u64> {
 
 pub fn part_two(input: &str) -> Option<u64> {
     let grid = parse_data(input);
-    let len_x = grid.len_x() as usize;
-    let len_y = grid.len_y() as usize;
+    let len_x = grid.width as usize;
+    let len_y = grid.height as usize;
 
     // convert to bits and expand GRID_MULTIPLIER times
-    let mut rocks_bits = vec![U1024::ZERO; len_y];
-    for y in 0..grid.len_y() {
-        for x in 0..grid.len_x() {
-            if grid[&Point::new(x, y)] == b'#' {
-                rocks_bits[y as usize] |= U1024::ONE << x as usize
+    let mut rocks_bits = vec![UBig::ZERO; len_y];
+    for y in 0..grid.height {
+        for x in 0..grid.width {
+            if grid[Point::new(x, y)] == b'#' {
+                rocks_bits[y as usize] |= UBig::ONE << x as usize
             }
         }
     }
@@ -114,9 +114,9 @@ pub fn part_two(input: &str) -> Option<u64> {
         .collect::<Vec<_>>();
 
     let mut my_positions_bits = (0..rocks_bits.len())
-        .map(|_| U1024::ZERO)
+        .map(|_| UBig::ZERO)
         .collect::<Vec<_>>();
-    my_positions_bits[len_y * GRID_MULTIPLIER / 2] |= U1024::ONE << (len_x * GRID_MULTIPLIER / 2);
+    my_positions_bits[len_y * GRID_MULTIPLIER / 2] |= UBig::ONE << (len_x * GRID_MULTIPLIER / 2);
 
     let magic_number_1 = len_x / 2;
     let magic_number_2 = magic_number_1 + len_x;
@@ -131,16 +131,11 @@ pub fn part_two(input: &str) -> Option<u64> {
     const NUMBER_OF_STEPS: i64 = 26501365;
 
     // Lagrange Interpolation (magic_numbers as points)
-    let mut result = 0;
-    for (mx, my) in results.iter() {
-        let mut part = *my;
-        for (ox, oy) in results.iter() {
-            if my != oy {
-                part = part * (NUMBER_OF_STEPS - ox) / (mx - ox);
-            }
-        }
-        result += part;
-    }
+    let x = NUMBER_OF_STEPS;
+    let [(x1, y1), (x2, y2), (x3, y3)] = results;
+    let result = (x - x2) / (x1 - x2) * (x - x3) / (x1 - x3) * y1
+        + (x - x1) / (x2 - x1) * (x - x3) / (x2 - x3) * y2
+        + (x - x1) / (x3 - x1) * (x - x2) / (x3 - x2) * y3;
 
     let result = result as u64;
 
@@ -160,6 +155,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, Some(528192879457051));
+        assert_eq!(result, Some(528192758996204));
     }
 }

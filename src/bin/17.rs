@@ -1,10 +1,9 @@
 advent_of_code::solution!(17);
 
+use advent_of_code::maneatingape::grid::*;
 use advent_of_code::maneatingape::hash::*;
 use advent_of_code::maneatingape::heap::*;
 use advent_of_code::maneatingape::point::*;
-
-use advent_of_code::util::list::Array2D;
 
 type Direction = u8;
 
@@ -15,17 +14,15 @@ struct Element {
     direction_count: u8,
 }
 
-fn parse_data(input: &str) -> Array2D<u8> {
-    let mut grid = Array2D::new(input);
-    for y in 0..grid.len_y() {
-        for x in 0..grid.len_x() {
-            grid[&Point::new(x, y)] -= b'0';
-        }
+fn parse_data(input: &str) -> Grid<u8> {
+    let mut grid = Grid::parse(input);
+    for elem in grid.bytes.iter_mut() {
+        *elem -= b'0';
     }
     grid
 }
 
-fn get_neighbors_part_1(grid: &Array2D<u8>, element: Element) -> Vec<Element> {
+fn get_neighbors_part_1(grid: &Grid<u8>, element: Element) -> Vec<Element> {
     let Element {
         location,
         direction,
@@ -47,7 +44,7 @@ fn get_neighbors_part_1(grid: &Array2D<u8>, element: Element) -> Vec<Element> {
         });
     }
 
-    if location.x < grid.len_x() - 1
+    if location.x < grid.width - 1
         && direction != b'L'
         && !(direction_count >= 3 && direction == b'R')
     {
@@ -76,7 +73,7 @@ fn get_neighbors_part_1(grid: &Array2D<u8>, element: Element) -> Vec<Element> {
         });
     }
 
-    if location.y < grid.len_y() - 1
+    if location.y < grid.height - 1
         && direction != b'U'
         && !(direction_count >= 3 && direction == b'D')
     {
@@ -95,7 +92,7 @@ fn get_neighbors_part_1(grid: &Array2D<u8>, element: Element) -> Vec<Element> {
     result
 }
 
-fn get_neighbors_part_2(grid: &Array2D<u8>, element: Element) -> Vec<Element> {
+fn get_neighbors_part_2(grid: &Grid<u8>, element: Element) -> Vec<Element> {
     let Element {
         location,
         direction,
@@ -121,7 +118,7 @@ fn get_neighbors_part_2(grid: &Array2D<u8>, element: Element) -> Vec<Element> {
         });
     }
 
-    if location.x < grid.len_x() - 1
+    if location.x < grid.width - 1
         && direction != b'L'
         && !(direction_count < 4 && direction != b'R')
         && !(direction_count >= 10 && direction == b'R')
@@ -155,7 +152,7 @@ fn get_neighbors_part_2(grid: &Array2D<u8>, element: Element) -> Vec<Element> {
         });
     }
 
-    if location.y < grid.len_y() - 1
+    if location.y < grid.height - 1
         && direction != b'U'
         && !(direction_count < 4 && direction != b'D')
         && !(direction_count >= 10 && direction == b'D')
@@ -175,9 +172,9 @@ fn get_neighbors_part_2(grid: &Array2D<u8>, element: Element) -> Vec<Element> {
     result
 }
 
-fn find_path_cost<F>(grid: &Array2D<u8>, get_neighbors: F) -> u32
+fn find_path_cost<F>(grid: &Grid<u8>, get_neighbors: F) -> u32
 where
-    F: Fn(&Array2D<u8>, Element) -> Vec<Element>,
+    F: Fn(&Grid<u8>, Element) -> Vec<Element>,
 {
     let root_element_right = Element {
         location: Point::new(0, 0),
@@ -191,9 +188,8 @@ where
         direction_count: 0,
     };
 
-    #[inline]
-    fn is_goal(grid: &Array2D<u8>, element: &Element) -> bool {
-        element.location.x == grid.len_x() - 1 && element.location.y == grid.len_y() - 1
+    fn is_goal(grid: &Grid<u8>, element: &Element) -> bool {
+        element.location.x == grid.width - 1 && element.location.y == grid.height - 1
     }
 
     let mut visited = FastSet::new();
@@ -223,7 +219,7 @@ where
             let dist_element = dist.get(&element).unwrap();
             let dist_new_element = dist.get(&new_element).copied().unwrap_or(u32::MAX);
 
-            let dist_to_new_element = dist_element + grid[&new_element.location] as u32;
+            let dist_to_new_element = dist_element + grid[new_element.location] as u32;
             if dist_to_new_element < dist_new_element {
                 dist.insert(new_element, dist_to_new_element);
                 queue.push(dist_to_new_element, new_element);
