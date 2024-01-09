@@ -4,14 +4,13 @@ use std::{
     process::{Command, Output, Stdio},
 };
 
-use crate::Day;
+use crate::template::Day;
 
 #[derive(Debug)]
 pub enum AocCommandError {
     CommandNotFound,
     CommandNotCallable,
     BadExitStatus(Output),
-    IoError,
 }
 
 impl Display for AocCommandError {
@@ -22,7 +21,6 @@ impl Display for AocCommandError {
             AocCommandError::BadExitStatus(_) => {
                 write!(f, "aoc-cli exited with a non-zero status.")
             }
-            AocCommandError::IoError => write!(f, "could not write output files to file system."),
         }
     }
 }

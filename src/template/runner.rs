@@ -1,13 +1,13 @@
 /// Encapsulates code that interacts with solution functions.
-use crate::template::{aoc_cli, ANSI_ITALIC, ANSI_RESET};
-use crate::Day;
 use std::fmt::Display;
+use std::hint::black_box;
 use std::io::{stdout, Write};
 use std::process::Output;
 use std::time::{Duration, Instant};
 use std::{cmp, env, process};
 
-use super::ANSI_BOLD;
+use crate::template::ANSI_BOLD;
+use crate::template::{aoc_cli, Day, ANSI_ITALIC, ANSI_RESET};
 
 pub fn run_part<I: Clone, T: Display>(func: impl Fn(I) -> Option<T>, input: I, day: Day, part: u8) {
     let part_str = format!("Part {part}");
@@ -31,7 +31,14 @@ fn run_timed<I: Clone, T>(
     hook: impl Fn(&T),
 ) -> (T, Duration, u128) {
     let timer = Instant::now();
-    let result = func(input.clone());
+    let result = {
+        let input = input.clone();
+
+        #[cfg(feature = "dhat-heap")]
+        let _profiler = dhat::Profiler::new_heap();
+
+        func(input)
+    };
     let base_time = timer.elapsed();
 
     hook(&result);
@@ -65,7 +72,7 @@ fn bench<I: Clone, T>(func: impl Fn(I) -> T, input: I, base_time: &Duration) -> 
         // need a clone here to make the borrow checker happy.
         let cloned = input.clone();
         let timer = Instant::now();
-        func(cloned);
+        black_box(func(black_box(cloned)));
         timers.push(timer.elapsed());
     }
 

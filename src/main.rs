@@ -1,10 +1,14 @@
-use advent_of_code::template::commands::{all, download, read, scaffold, solve};
+use advent_of_code::template::commands::{all, download, read, scaffold, solve, time};
 use args::{parse, AppArguments};
 
-mod args {
-    use std::process;
+#[cfg(feature = "today")]
+use advent_of_code::template::Day;
+#[cfg(feature = "today")]
+use std::process;
 
-    use advent_of_code::Day;
+mod args {
+    use advent_of_code::template::Day;
+    use std::process;
 
     pub enum AppArguments {
         Download {
@@ -15,17 +19,24 @@ mod args {
         },
         Scaffold {
             day: Day,
+            download: bool,
         },
         Solve {
             day: Day,
             release: bool,
-            time: bool,
+            dhat: bool,
             submit: Option<u8>,
         },
         All {
             release: bool,
-            time: bool,
         },
+        Time {
+            all: bool,
+            day: Option<Day>,
+            store: bool,
+        },
+        #[cfg(feature = "today")]
+        Today,
     }
 
     pub fn parse() -> Result<AppArguments, Box<dyn std::error::Error>> {
@@ -34,8 +45,17 @@ mod args {
         let app_args = match args.subcommand()?.as_deref() {
             Some("all") => AppArguments::All {
                 release: args.contains("--release"),
-                time: args.contains("--time"),
             },
+            Some("time") => {
+                let all = args.contains("--all");
+                let store = args.contains("--store");
+
+                AppArguments::Time {
+                    all,
+                    day: args.opt_free_from_str()?,
+                    store,
+                }
+            }
             Some("download") => AppArguments::Download {
                 day: args.free_from_str()?,
             },
@@ -44,13 +64,16 @@ mod args {
             },
             Some("scaffold") => AppArguments::Scaffold {
                 day: args.free_from_str()?,
+                download: args.contains("--download"),
             },
             Some("solve") => AppArguments::Solve {
                 day: args.free_from_str()?,
                 release: args.contains("--release"),
                 submit: args.opt_value_from_str("--submit")?,
-                time: args.contains("--time"),
+                dhat: args.contains("--dhat"),
             },
+            #[cfg(feature = "today")]
+            Some("today") => AppArguments::Today,
             Some(x) => {
                 eprintln!("Unknown command: {x}");
                 process::exit(1);
@@ -77,16 +100,39 @@ fn main() {
             std::process::exit(1);
         }
         Ok(args) => match args {
-            AppArguments::All { release, time } => all::handle(release, time),
+            AppArguments::All { release } => all::handle(release),
+            AppArguments::Time { day, all, store } => time::handle(day, all, store),
             AppArguments::Download { day } => download::handle(day),
             AppArguments::Read { day } => read::handle(day),
-            AppArguments::Scaffold { day } => scaffold::handle(day),
+            AppArguments::Scaffold { day, download } => {
+                scaffold::handle(day);
+                if download {
+                    download::handle(day);
+                }
+            }
             AppArguments::Solve {
                 day,
                 release,
-                time,
+                dhat,
                 submit,
-            } => solve::handle(day, release, time, submit),
+            } => solve::handle(day, release, dhat, submit),
+            #[cfg(feature = "today")]
+            AppArguments::Today => {
+                match Day::today() {
+                    Some(day) => {
+                        scaffold::handle(day);
+                        download::handle(day);
+                        read::handle(day)
+                    }
+                    None => {
+                        eprintln!(
+                            "`today` command can only be run between the 1st and \
+                            the 25th of december. Please use `scaffold` with a specific day."
+                        );
+                        process::exit(1)
+                    }
+                };
+            }
         },
     };
 }

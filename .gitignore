@@ -21,3 +21,10 @@ data/inputs/*
 !data/inputs/.keep
 data/puzzles/*
 !data/puzzles/.keep
+
+# Dhat
+dhat-heap.json
+
+# Benchmarks
+
+data/timings.json
